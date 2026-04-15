@@ -980,9 +980,71 @@ Reglas duras:
 - **Nunca** un `try/catch` silencia un error async sin mostrarlo al usuario
   de alguna forma (log + UI + ambos).
 
+### 22.5 Jerarquía visual vs legibilidad
+
+El contenido **secundario** (etiquetas de edge, metadatos, anotaciones,
+hints, tooltips, breadcrumbs) debe ser visualmente distinto del **primario**
+(labels de nodo, títulos, acciones), pero la **legibilidad AA nunca se
+sacrifica para señalar secundariedad**.
+
+**Señales permitidas para marcar "secundario"**:
+
+- Tamaño de fuente menor (ej. `0.7rem` vs `0.875rem`).
+- Ausencia de borde cuando el primario sí lo tiene.
+- Transparencia del fondo (`fill-opacity: 0.85-0.9`, nunca 100% opaco, nunca
+  menos de 0.7).
+- Tipografía menos pesada (`font-normal` vs `font-medium`).
+- Posición "flotante" encima de otro elemento (sobre una línea, junto a un
+  icono).
+- Esquinas redondeadas diferentes del primario (pill vs caja).
+
+**Señales prohibidas**:
+
+- Bajar el contraste del texto por debajo de **4.5:1** (AA normal) para
+  atenuar visualmente.
+- Usar `--color-muted-foreground` para texto que el usuario necesita leer
+  rápido sin zoom. Ese token es para texto verdaderamente accesorio
+  (placeholders, hints de form, timestamps).
+- Opacidad agresiva (< 0.7) que haga el texto difícil de leer sobre fondos
+  complejos.
+
+**Criterio de decisión**: si necesitas acercarte a la pantalla para leer el
+texto secundario, la jerarquía está mal. Súbelo a `--color-foreground` (o el
+tono equivalente en tu tema) y compensa la secundariedad con las otras
+señales permitidas.
+
+### 22.6 Librerías externas y mapeo al design system
+
+Toda librería externa que inyecte su propio CSS (React Flow, shadcn/ui,
+Radix, Tailwind defaults, Mermaid, Excalidraw…) debe ser **mapeada
+explícitamente a los tokens del design system** en `globals.css`, para
+ambos temas, en el **mismo commit** que integra la librería.
+
+**No se acepta** "dejar los defaults por ahora". Los defaults son casi
+siempre colores hardcoded (`white`, `black`, `#fff`, `rgb(...)`, o
+`prefers-color-scheme`) y rompen §22.2.
+
+**Aplicación concreta**:
+
+- Usa las **variables CSS que exponga la librería** cuando existan
+  (ej. `--xy-*` en React Flow, `--radix-*` en Radix UI). Las asignas en
+  `:root` y `[data-theme='dark']` con los tokens de tu design system.
+- Si la librería no expone variables, **escribe selectores directos** sobre
+  sus clases en `globals.css` (ej. `.react-flow__edge-textbg { fill: ... }`).
+- Para cada elemento visible o interactivo de la librería, define su
+  apariencia en **claro Y oscuro** antes de commitear la integración.
+- Mantén todas las overrides **agrupadas en `globals.css`**, no dispersas
+  por componentes, para que auditar el contrato claro/oscuro sea una sola
+  lectura.
+- Documenta cada bloque con un comentario de una línea indicando qué
+  librería y qué elemento cubre.
+
+**Por qué**: los bugs de texto invisible en nodos flow y de edge labels
+con fondo blanco hardcoded vinieron ambos de dejar defaults de React Flow
+sin mapear. Esta regla los habría prevenido.
+
 ---
 
-Estas cuatro subsecciones (§22.1-22.4) son las primeras de un design system
-más amplio. Las siguientes secciones (tipografía escalonada, espaciado,
-responsive, animaciones, semántica HTML) se añadirán cuando empiecen a
-doler. YAGNI (§12).
+Estas subsecciones (§22.1-22.6) son la base del design system.
+Las siguientes (tipografía escalonada, espaciado, responsive, animaciones,
+semántica HTML) se añadirán cuando empiecen a doler. YAGNI (§12).
