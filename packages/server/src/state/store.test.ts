@@ -1,4 +1,4 @@
-import { type CanvasId, DomainError } from '@arqyx/shared';
+import { type CanvasId, type ColumnId, DomainError, type TableId } from '@arqyx/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSequentialGenerator } from './id-generator.js';
 import { CanvasStore, type StoreEvent } from './store.js';
@@ -151,6 +151,33 @@ describe('CanvasStore.renameColumn', () => {
 
     const updated = store.renameColumn(canvas.id, tableId, columnId, 'correo');
     expect(updated.tables[0]?.columns[0]?.name).toBe('correo');
+  });
+});
+
+describe('CanvasStore.editColumn', () => {
+  it('updates partial properties of an existing column and emits canvas:updated', () => {
+    const store = createTestStore();
+    const canvas = store.createErdCanvas('Mi base');
+    const tableId = store.addTable(canvas.id, {
+      name: 'users',
+      position: { x: 0, y: 0 },
+    }).tables[0]?.id as TableId;
+
+    const columnId = store.addColumn(canvas.id, tableId, {
+      name: 'email',
+      type: 'text',
+      isPrimaryKey: false,
+      isNullable: false,
+      isUnique: true,
+    }).tables[0]?.columns[0]?.id as ColumnId;
+
+    const updated = store.editColumn(canvas.id, tableId, columnId, {
+      type: 'varchar',
+      isUnique: false,
+    });
+
+    expect(updated.tables[0]?.columns[0]?.type).toBe('varchar');
+    expect(updated.tables[0]?.columns[0]?.isUnique).toBe(false);
   });
 });
 

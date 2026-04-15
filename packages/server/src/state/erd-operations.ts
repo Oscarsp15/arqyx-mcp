@@ -86,6 +86,34 @@ export function addColumnToTable(
   }));
 }
 
+export type ColumnPatch = {
+  type?: SqlType;
+  isPrimaryKey?: boolean;
+  isNullable?: boolean;
+  isUnique?: boolean;
+};
+
+export function editColumnInTable(
+  canvas: ErdCanvas,
+  tableId: TableId,
+  columnId: ColumnId,
+  patch: ColumnPatch,
+): ErdCanvas {
+  const table = findTable(canvas, tableId);
+  const column = table.columns.find((candidate) => candidate.id === columnId);
+  if (!column) {
+    throw new DomainError(
+      'COLUMN_NOT_FOUND',
+      `No se encontró la columna solicitada en la tabla "${table.name}".`,
+    );
+  }
+
+  return mapTable(canvas, tableId, (current) => ({
+    ...current,
+    columns: current.columns.map((c) => (c.id === columnId ? { ...c, ...patch } : c)),
+  }));
+}
+
 export function removeColumnFromTable(
   canvas: ErdCanvas,
   tableId: TableId,
