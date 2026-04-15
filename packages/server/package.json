@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@arqyx/shared": "workspace:*",
+    "@dagrejs/dagre": "^3.0.0",
     "@modelcontextprotocol/sdk": "^1.0.4",
     "fastify": "^5.1.0",
     "pino": "^9.5.0",

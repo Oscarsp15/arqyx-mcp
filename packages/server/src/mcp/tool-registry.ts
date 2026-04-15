@@ -11,6 +11,7 @@ import { removeColumnTool } from './tools/erd/remove-column.js';
 import { removeRelationTool } from './tools/erd/remove-relation.js';
 import { removeTableTool } from './tools/erd/remove-table.js';
 import { addFlowNodeTool } from './tools/flow/add-node.js';
+import { autoLayoutFlowTool } from './tools/flow/auto-layout.js';
 import { connectFlowNodesTool } from './tools/flow/connect-nodes.js';
 import { createFlowCanvasTool } from './tools/flow/create-canvas.js';
 import { removeFlowEdgeTool } from './tools/flow/remove-edge.js';
@@ -35,6 +36,7 @@ const allTools: readonly Tool[] = [
   removeFlowNodeTool,
   connectFlowNodesTool,
   removeFlowEdgeTool,
+  autoLayoutFlowTool,
 ];
 
 export function listTools(): readonly Tool[] {
