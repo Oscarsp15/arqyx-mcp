@@ -8,6 +8,49 @@ El roadmap activo del proyecto vive en el **GitHub Project v2**
 Este documento explica cómo usarlo siguiendo las reglas de AGENTS.md §23
 (coordinación multi-agente) sin que el trabajo se bloquee.
 
+## Setup inicial (una sola vez)
+
+El board tiene **dos capas de automatización** que deben configurarse
+manualmente una vez por el owner del repo:
+
+### 1. Workflows built-in de Projects v2 (UI, 2 minutos)
+
+Ve a https://github.com/users/Oscarsp15/projects/1, esquina superior
+derecha → `⋯` menú → **Workflows**. Activa estos:
+
+- **Item added to project** → Set status `Todo`
+- **Item closed** → Set status `Done`
+- **Pull request merged** → Set status `Done`
+- **Item reopened** → Set status `Todo`
+
+Esto mueve cards automáticamente cuando cambia su estado.
+
+### 2. Secret `PROJECTS_PAT` para el workflow custom (una sola vez)
+
+El workflow `.github/workflows/project-sync.yml` auto-añade issues y
+PRs nuevos al Project board cuando se abren. Como los Projects v2
+requieren permisos especiales que el `GITHUB_TOKEN` nativo no tiene,
+hay que configurar un **Personal Access Token (PAT)** con scope de
+projects:
+
+1. Ve a https://github.com/settings/personal-access-tokens/new
+2. Crea un **Fine-grained token**:
+   - **Nombre**: `arqyx-mcp-project-sync`
+   - **Expiration**: lo que prefieras (recomendado: 1 año)
+   - **Repository access**: `Only select repositories` → `Oscarsp15/arqyx-mcp`
+   - **Permissions** → **Account permissions**:
+     - `Projects` → `Read and write`
+3. Click **Generate token** y copia el valor (empieza con `github_pat_`)
+4. Ve a https://github.com/Oscarsp15/arqyx-mcp/settings/secrets/actions
+5. Click **New repository secret**:
+   - **Name**: `PROJECTS_PAT`
+   - **Value**: pega el token del paso 3
+6. Click **Add secret**
+
+Desde ese momento el workflow puede auto-añadir issues/PRs al board. Si
+el secret no existe, el workflow emite un warning y salta la
+sincronización (no falla el CI).
+
 ## Filosofía — Kanban, no Scrum
 
 No hay sprints, ni velocity, ni standups. El trabajo fluye de forma
