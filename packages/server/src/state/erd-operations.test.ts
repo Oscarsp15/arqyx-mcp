@@ -15,6 +15,7 @@ import {
   removeColumnFromTable,
   removeRelationFromCanvas,
   removeTableFromCanvas,
+  renameColumnInTable,
   renameTableInCanvas,
 } from './erd-operations.js';
 
@@ -150,6 +151,61 @@ describe('removeColumnFromTable', () => {
 
   it('throws COLUMN_NOT_FOUND when the column does not exist', () => {
     expect(() => removeColumnFromTable(base, tableId, 'missing' as ColumnId)).toThrow(DomainError);
+  });
+});
+
+describe('renameColumnInTable', () => {
+  const tableId = 'tbl-1' as TableId;
+  const columnId = 'col-1' as ColumnId;
+  const base = addColumnToTable(
+    addTableToCanvas(createEmptyErdCanvas(canvasId, 'Mi base'), {
+      id: tableId,
+      name: 'users',
+      position: { x: 0, y: 0 },
+    }),
+    tableId,
+    {
+      id: columnId,
+      name: 'email',
+      type: 'text',
+      isPrimaryKey: false,
+      isNullable: false,
+      isUnique: true,
+    },
+  );
+
+  it('updates the name of the target column without mutating the previous canvas', () => {
+    const next = renameColumnInTable(base, tableId, columnId, 'correo');
+    const renamed = next.tables[0]?.columns[0];
+    const original = base.tables[0]?.columns[0];
+    expect(renamed?.name).toBe('correo');
+    expect(original?.name).toBe('email');
+    expect(renamed?.type).toBe(original?.type);
+  });
+
+  it('allows renaming to the exact same name without throwing', () => {
+    const next = renameColumnInTable(base, tableId, columnId, 'email');
+    expect(next.tables[0]?.columns[0]?.name).toBe('email');
+  });
+
+  it('throws COLUMN_NOT_FOUND when the column does not exist', () => {
+    expect(() => renameColumnInTable(base, tableId, 'missing' as ColumnId, 'test')).toThrow(
+      DomainError,
+    );
+  });
+
+  it('rejects duplicate column names in the same table', () => {
+    const withSecondCol = addColumnToTable(base, tableId, {
+      id: 'col-2' as ColumnId,
+      name: 'status',
+      type: 'text',
+      isPrimaryKey: false,
+      isNullable: false,
+      isUnique: false,
+    });
+    expect(() => renameColumnInTable(withSecondCol, tableId, 'col-2' as ColumnId, 'email')).toThrow(
+      DomainError,
+    );
   });
 });
 

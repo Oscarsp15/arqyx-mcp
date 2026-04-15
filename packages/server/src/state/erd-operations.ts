@@ -141,6 +141,37 @@ export function removeTableFromCanvas(canvas: ErdCanvas, tableId: TableId): ErdC
   };
 }
 
+export function renameColumnInTable(
+  canvas: ErdCanvas,
+  tableId: TableId,
+  columnId: ColumnId,
+  newName: string,
+): ErdCanvas {
+  const table = findTable(canvas, tableId);
+  const column = table.columns.find((candidate) => candidate.id === columnId);
+  if (!column) {
+    throw new DomainError(
+      'COLUMN_NOT_FOUND',
+      `No se encontró la columna solicitada en la tabla "${table.name}".`,
+    );
+  }
+
+  const nameExists = table.columns.some(
+    (candidate) => candidate.id !== columnId && candidate.name === newName,
+  );
+  if (nameExists) {
+    throw new DomainError(
+      'COLUMN_DUPLICATE_NAME',
+      `Ya existe una columna con el nombre "${newName}" en la tabla "${table.name}".`,
+    );
+  }
+
+  return mapTable(canvas, tableId, (current) => ({
+    ...current,
+    columns: current.columns.map((c) => (c.id === columnId ? { ...c, name: newName } : c)),
+  }));
+}
+
 export function renameTableInCanvas(
   canvas: ErdCanvas,
   tableId: TableId,

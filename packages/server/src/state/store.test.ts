@@ -129,6 +129,31 @@ describe('CanvasStore.removeColumn', () => {
   });
 });
 
+describe('CanvasStore.renameColumn', () => {
+  it('updates the name of an existing column and emits canvas:updated', () => {
+    const store = createTestStore();
+    const canvas = store.createErdCanvas('Mi base');
+    const afterTable = store.addTable(canvas.id, {
+      name: 'users',
+      position: { x: 0, y: 0 },
+    });
+    const tableId = afterTable.tables[0]?.id;
+    if (!tableId) throw new Error('table id missing');
+    const withColumn = store.addColumn(canvas.id, tableId, {
+      name: 'email',
+      type: 'text',
+      isPrimaryKey: false,
+      isNullable: false,
+      isUnique: true,
+    });
+    const columnId = withColumn.tables[0]?.columns[0]?.id;
+    if (!columnId) throw new Error('column id missing');
+
+    const updated = store.renameColumn(canvas.id, tableId, columnId, 'correo');
+    expect(updated.tables[0]?.columns[0]?.name).toBe('correo');
+  });
+});
+
 describe('CanvasStore.renameTable', () => {
   it('updates the name of a table and emits canvas:updated', () => {
     const store = createTestStore();

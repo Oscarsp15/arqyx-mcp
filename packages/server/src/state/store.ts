@@ -25,6 +25,7 @@ import {
   removeColumnFromTable,
   removeRelationFromCanvas,
   removeTableFromCanvas,
+  renameColumnInTable,
   renameTableInCanvas,
 } from './erd-operations.js';
 import { type LayoutDirection, applyAutoLayout } from './flow-layout.js';
@@ -157,6 +158,19 @@ export class CanvasStore {
   removeColumn(canvasId: CanvasId, tableId: TableId, columnId: ColumnId): ErdCanvas {
     const canvas = this.requireErdCanvas(canvasId);
     const next = removeColumnFromTable(canvas, tableId, columnId);
+    this.canvases.set(canvasId, next);
+    this.emit({ type: 'canvas:updated', canvas: next });
+    return next;
+  }
+
+  renameColumn(
+    canvasId: CanvasId,
+    tableId: TableId,
+    columnId: ColumnId,
+    newName: string,
+  ): ErdCanvas {
+    const canvas = this.requireErdCanvas(canvasId);
+    const next = renameColumnInTable(canvas, tableId, columnId, newName);
     this.canvases.set(canvasId, next);
     this.emit({ type: 'canvas:updated', canvas: next });
     return next;
