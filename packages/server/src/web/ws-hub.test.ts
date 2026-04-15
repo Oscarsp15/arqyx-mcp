@@ -1,10 +1,10 @@
 import { createServer } from 'node:http';
-import { type AddressInfo } from 'node:net';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import type { AddressInfo } from 'node:net';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
-import { attachWsHub } from './ws-hub.js';
-import { CanvasStore } from '../state/store.js';
 import { createSequentialGenerator } from '../state/id-generator.js';
+import { CanvasStore } from '../state/store.js';
+import { attachWsHub } from './ws-hub.js';
 
 function createTestStore(): CanvasStore {
   return new CanvasStore({
@@ -76,8 +76,8 @@ describe('WsHub (WebSocket Server)', () => {
     const canvas = store.createErdCanvas('Test Canvas');
     // Using manual store assignment for precise ID targeting
     store.addTable(canvas.id, { name: 'old_table', position: { x: 0, y: 0 } });
-    const updatedCanvas1 = store.get(canvas.id)!;
-    const tableId = updatedCanvas1.kind === 'erd' ? updatedCanvas1.tables[0]!.id : '';
+    const updatedCanvas1 = store.get(canvas.id);
+    const tableId = updatedCanvas1?.kind === 'erd' ? updatedCanvas1.tables[0]?.id : '';
 
     const client = new WebSocket(`ws://localhost:${port}/ws`);
     clients.push(client);
@@ -102,8 +102,8 @@ describe('WsHub (WebSocket Server)', () => {
   it('handles erd:table:remove message', async () => {
     const canvas = store.createErdCanvas('Test Canvas');
     store.addTable(canvas.id, { name: 'table_to_remove', position: { x: 0, y: 0 } });
-    const updatedCanvas1 = store.get(canvas.id)!;
-    const tableId = updatedCanvas1.kind === 'erd' ? updatedCanvas1.tables[0]!.id : '';
+    const updatedCanvas1 = store.get(canvas.id);
+    const tableId = updatedCanvas1?.kind === 'erd' ? updatedCanvas1.tables[0]?.id : '';
 
     const client = new WebSocket(`ws://localhost:${port}/ws`);
     clients.push(client);
