@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   --color-background: oklch(1 0 0);
   --color-foreground: oklch(0.145 0 0);
@@ -73,6 +75,19 @@
 
 .react-flow__controls-button:last-child {
   border-bottom: none;
+}
+
+.react-flow__edge-textbg {
+  fill: var(--color-background);
+  fill-opacity: 0.9;
+  rx: 4;
+  ry: 4;
+}
+
+.react-flow__edge-text {
+  fill: var(--color-foreground);
+  font-size: 0.7rem;
+  font-weight: 500;
 }
 
 html,
