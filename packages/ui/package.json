@@ -13,7 +13,7 @@
   "dependencies": {
     "@arqyx/shared": "workspace:*",
     "@xyflow/react": "^12.3.5",
-    "lucide-react": "^0.460.0",
+    "lucide-react": "^1.8.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zustand": "^5.0.1"
