@@ -129,6 +129,22 @@ describe('CanvasStore.removeColumn', () => {
   });
 });
 
+describe('CanvasStore.renameTable', () => {
+  it('updates the name of a table and emits canvas:updated', () => {
+    const store = createTestStore();
+    const canvas = store.createErdCanvas('Mi base');
+    const withTable = store.addTable(canvas.id, {
+      name: 'users',
+      position: { x: 0, y: 0 },
+    });
+    const tableId = withTable.tables[0]?.id;
+    if (!tableId) throw new Error('table id missing');
+
+    const updated = store.renameTable(canvas.id, tableId, 'clientes');
+    expect(updated.tables[0]?.name).toBe('clientes');
+  });
+});
+
 describe('CanvasStore.moveTable', () => {
   it('updates the position of a table and emits canvas:updated', () => {
     const store = createTestStore();

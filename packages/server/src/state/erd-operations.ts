@@ -141,6 +141,26 @@ export function removeTableFromCanvas(canvas: ErdCanvas, tableId: TableId): ErdC
   };
 }
 
+export function renameTableInCanvas(
+  canvas: ErdCanvas,
+  tableId: TableId,
+  newName: string,
+): ErdCanvas {
+  findTable(canvas, tableId);
+  const nameExists = canvas.tables.some((table) => table.id !== tableId && table.name === newName);
+  if (nameExists) {
+    throw new DomainError(
+      'TABLE_DUPLICATE_NAME',
+      `Ya existe una tabla con el nombre "${newName}" en este lienzo.`,
+    );
+  }
+
+  return mapTable(canvas, tableId, (current) => ({
+    ...current,
+    name: newName,
+  }));
+}
+
 export type NewRelationInput = {
   fromTable: TableId;
   fromColumn: ColumnId;
