@@ -26,6 +26,7 @@ import {
   removeRelationFromCanvas,
   removeTableFromCanvas,
 } from './erd-operations.js';
+import { type LayoutDirection, applyAutoLayout } from './flow-layout.js';
 import {
   type FlowNodePatch,
   addNodeToFlow,
@@ -237,6 +238,14 @@ export class CanvasStore {
   removeFlowEdge(canvasId: CanvasId, edgeId: FlowEdgeId): FlowCanvas {
     const canvas = this.requireFlowCanvas(canvasId);
     const next = removeEdgeFromFlow(canvas, edgeId);
+    this.canvases.set(canvasId, next);
+    this.emit({ type: 'canvas:updated', canvas: next });
+    return next;
+  }
+
+  applyFlowLayout(canvasId: CanvasId, direction: LayoutDirection): FlowCanvas {
+    const canvas = this.requireFlowCanvas(canvasId);
+    const next = applyAutoLayout(canvas, direction);
     this.canvases.set(canvasId, next);
     this.emit({ type: 'canvas:updated', canvas: next });
     return next;
