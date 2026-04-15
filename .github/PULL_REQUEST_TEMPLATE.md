@@ -26,6 +26,16 @@ Título del PR: <tipo>(<scope>): <mensaje en español>
 - [ ] Prueba manual realizada (describir qué se probó y qué se vio)
 - [ ] Screenshots incluidos si hay cambios visuales
 
+## Revisión visual (AGENTS.md §20.13 y §22.2)
+
+Si este PR toca UI (componentes, estilos, `globals.css`, nuevos shapes o
+colores), marca una de las dos:
+
+- [ ] He abierto el cambio en el navegador con **tema claro Y oscuro** y
+      confirmé contraste suficiente. Ningún texto queda invisible (blanco
+      sobre blanco, negro sobre negro).
+- [ ] No aplica, este PR no tiene impacto visual.
+
 ## Fuera de alcance
 
 <!-- Qué decidiste NO hacer en este PR y por qué. -->

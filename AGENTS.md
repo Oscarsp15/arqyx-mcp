@@ -603,6 +603,23 @@ Zustand.
   (renderiza el valor). Usa `{condition ? <Component /> : null}`.
 - Callbacks async en event handlers sin manejo de error.
 
+### 20.13 Revisión visual obligatoria en ambos temas
+
+Todo PR que toque código de UI (componentes, estilos, `globals.css`, nuevos
+shapes o colores) debe incluir en el cuerpo del PR el checkbox:
+
+> *He abierto el componente en el navegador con tema claro Y oscuro y
+> confirmé que el contraste es suficiente y que no hay texto invisible
+> (blanco sobre blanco, negro sobre negro, o similar).*
+
+Esta regla existe porque Tailwind permite construir combinaciones que
+compilan y pasan el lint, pero producen contrastes inválidos en uno de los
+dos temas. El único filtro real es la revisión humana en el navegador.
+
+Si el cambio es solo código sin impacto visual (lógica, tests, refactor no
+UI), no aplica y se marca explícitamente: *"no aplica, PR sin impacto
+visual"*.
+
 ---
 
 ## 21. GitHub y control de versiones (nivel senior)
@@ -868,3 +885,104 @@ Archivos en la raíz:
 
 Todo esto ya está en `.gitignore`, pero la regla aquí es: **si tienes duda,
 no lo commitees, pregunta**.
+
+---
+
+## 22. Design system y tema visual
+
+Este proyecto mezcla tema claro y oscuro, múltiples tipos de lienzo y cientos
+de combinaciones de color. Para que todo se vea consistente y sin bugs de
+contraste, estas reglas son obligatorias para cualquier cambio de UI.
+
+### 22.1 Design tokens — fuente única de color
+
+- **Todo color** usado en la UI vive primero como **variable CSS en
+  `packages/ui/src/styles/globals.css`**, con variante clara y oscura
+  definidas en el mismo commit.
+- Las clases Tailwind que uses en componentes **deben resolver a estos
+  tokens**: `bg-background`, `text-foreground`, `border-border`,
+  `bg-muted`, etc.
+- **Prohibido** usar clases Tailwind de color directas (`bg-blue-500`,
+  `text-red-700`) en componentes de dominio salvo excepciones documentadas
+  en un comentario de una línea.
+- Excepción permitida: paletas semáforo (verde éxito, amber advertencia,
+  rojo error) cuando el significado es intrínseco al color y no decorativo.
+  Aun así, deben probarse en ambos temas.
+- Si necesitas un color nuevo, **primero lo añades como token** (con su
+  variante oscura), y después lo usas. No al revés.
+
+### 22.2 Contrato claro/oscuro
+
+Regla dura: **ningún componente puede asumir el color de fondo**. Si un
+componente define un color de texto, también es responsable de garantizar
+que contrasta con el fondo sobre el que se renderizará, **en los dos temas**.
+
+Aplicación concreta:
+
+- Si añades una variable CSS en `:root`, añades **inmediatamente** su
+  contraparte en `[data-theme='dark']` en el mismo cambio. No se aceptan
+  PRs que definan solo una variante "para después".
+- Nunca hardcodees `bg-white`, `bg-black`, `text-white`, `text-black` en un
+  componente. Usa los tokens del design system.
+- **Contraste mínimo AA** (4.5:1 para texto normal, 3:1 para texto grande)
+  en ambos temas. Si no estás seguro, usa un checker (ej. DevTools →
+  Lighthouse).
+- Los colores con significado semántico (iconos de estado, badges) deben
+  elegirse para ser legibles en **ambos fondos**, no solo el tema por
+  defecto.
+
+Esta regla existe porque Tailwind permite escribir combinaciones que
+compilan y pasan el lint pero producen texto invisible en uno de los dos
+temas. El filtro es la revisión visual (§20.13).
+
+### 22.3 Iconografía
+
+- **Única librería de iconos permitida: Lucide** (`lucide-react`). No se
+  añaden otras sin ADR.
+- **Prohibido** SVG custom inline dentro de componentes salvo que el icono
+  no exista en Lucide y el caso esté justificado en un comentario.
+- Tamaños consistentes alineados a la tipografía:
+  - `h-3 w-3` para texto `text-xs`
+  - `h-4 w-4` para texto `text-sm` y `text-base`
+  - `h-5 w-5` para texto `text-lg` en adelante
+- **Color**: siempre `currentColor` (heredado del texto). No hardcodees un
+  color en el SVG del icono.
+- **Iconos decorativos** (al lado de un texto que ya dice lo mismo):
+  `aria-hidden="true"`.
+- **Iconos interactivos** (botón icon-only): el elemento contenedor lleva
+  `aria-label` descriptivo en español, el icono lleva `aria-hidden="true"`.
+- **Iconos con significado único** (no acompañados de texto): su contenedor
+  lleva `aria-label` descriptivo en español.
+
+### 22.4 Estados de componentes async
+
+Todo componente que obtiene datos de fuente externa (WebSocket, fetch,
+MCP, disco) tiene **4 estados explícitos**:
+
+1. **loading** — mientras los datos no han llegado todavía.
+2. **empty** — cuando llegaron pero no hay nada que mostrar.
+3. **error** — cuando la fuente falló.
+4. **success** — el happy path.
+
+Reglas duras:
+
+- **Prohibido** renderizar `null` silenciosamente durante loading. Siempre
+  hay un skeleton, spinner o texto de "Cargando…".
+- **Prohibido** asumir que los datos llegan. Todo tipo que puede no existir
+  es `T | null` o `T | undefined`, nunca se usa `!`.
+- **Empty states** tienen un **CTA claro en español** que le dice al usuario
+  qué hacer. Ejemplo: *"No hay lienzos todavía. Pídele a Claude que cree
+  uno con `create_flow_canvas`."*
+- **Error states** tienen:
+  - Mensaje en español que explica qué pasó.
+  - Botón de reintentar cuando la operación es reintentable.
+  - Código de error tipado (§19.5) por debajo para debugging.
+- **Nunca** un `try/catch` silencia un error async sin mostrarlo al usuario
+  de alguna forma (log + UI + ambos).
+
+---
+
+Estas cuatro subsecciones (§22.1-22.4) son las primeras de un design system
+más amplio. Las siguientes secciones (tipografía escalonada, espaciado,
+responsive, animaciones, semántica HTML) se añadirán cuando empiecen a
+doler. YAGNI (§12).
