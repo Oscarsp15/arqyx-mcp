@@ -15,6 +15,7 @@ import {
   removeColumnFromTable,
   removeRelationFromCanvas,
   removeTableFromCanvas,
+  renameTableInCanvas,
 } from './erd-operations.js';
 
 const canvasId = 'canvas-1' as CanvasId;
@@ -271,6 +272,27 @@ describe('removeRelationFromCanvas', () => {
         toColumn: usersPk,
       }),
     ).toThrow(DomainError);
+  });
+});
+
+describe('renameTableInCanvas', () => {
+  it('updates the name of the target table without mutating the previous canvas', () => {
+    const { canvas, usersId } = buildCanvasWithTwoTables();
+    const next = renameTableInCanvas(canvas, usersId, 'clientes');
+    const renamed = next.tables.find((table) => table.id === usersId);
+    const original = canvas.tables.find((table) => table.id === usersId);
+    expect(renamed?.name).toBe('clientes');
+    expect(original?.name).toBe('users');
+  });
+
+  it('throws TABLE_NOT_FOUND when the table does not exist', () => {
+    const { canvas } = buildCanvasWithTwoTables();
+    expect(() => renameTableInCanvas(canvas, 'missing' as TableId, 'test')).toThrow(DomainError);
+  });
+
+  it('rejects duplicate table names', () => {
+    const { canvas, usersId } = buildCanvasWithTwoTables();
+    expect(() => renameTableInCanvas(canvas, usersId, 'orders')).toThrow(DomainError);
   });
 });
 
