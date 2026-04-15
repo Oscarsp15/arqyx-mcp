@@ -8,6 +8,7 @@ import { addColumnTool } from './add-column.js';
 import { addTableTool } from './add-table.js';
 import { createErdCanvasTool } from './create-canvas.js';
 import { editColumnTool } from './edit-column.js';
+import { exportSqlTool } from './export-sql.js';
 import { removeColumnTool } from './remove-column.js';
 import { renameColumnTool } from './rename-column.js';
 import { renameTableTool } from './rename-table.js';
@@ -253,6 +254,43 @@ describe('edit_column tool', () => {
         tableId: 't1',
         columnId: 'col1',
         type: 'invalid_type',
+      }),
+    ).toThrow();
+  });
+});
+
+describe('export_sql_ddl tool', () => {
+  it('generates a PostgreSQL DDL string for a given canvas', async () => {
+    const context = createContext();
+    const canvas = context.store.createErdCanvas('Mi base sql');
+    const withTable = context.store.addTable(canvas.id, {
+      name: 'users',
+      position: { x: 0, y: 0 },
+    });
+    const tableId = withTable.tables[0]?.id;
+    if (!tableId) throw new Error('table id missing');
+    context.store.addColumn(canvas.id, tableId, {
+      name: 'id',
+      type: 'uuid',
+      isPrimaryKey: true,
+      isNullable: false,
+      isUnique: true,
+    });
+
+    const result = await exportSqlTool.handler(
+      { canvasId: canvas.id, dialect: 'postgresql' },
+      context,
+    );
+
+    expect(result.content[0]?.text).toContain('CREATE TABLE "users" (');
+    expect(result.content[0]?.text).toContain('"id" UUID PRIMARY KEY');
+  });
+
+  it('rejects unsupported dialects via schema', () => {
+    expect(() =>
+      exportSqlTool.inputSchema.parse({
+        canvasId: 'c1',
+        dialect: 'mysql',
       }),
     ).toThrow();
   });

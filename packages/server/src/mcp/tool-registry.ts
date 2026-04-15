@@ -8,6 +8,7 @@ import { addRelationTool } from './tools/erd/add-relation.js';
 import { addTableTool } from './tools/erd/add-table.js';
 import { createErdCanvasTool } from './tools/erd/create-canvas.js';
 import { editColumnTool } from './tools/erd/edit-column.js';
+import { exportSqlTool } from './tools/erd/export-sql.js';
 import { removeColumnTool } from './tools/erd/remove-column.js';
 import { removeRelationTool } from './tools/erd/remove-relation.js';
 import { removeTableTool } from './tools/erd/remove-table.js';
@@ -36,6 +37,7 @@ const allTools: readonly Tool[] = [
   renameColumnTool,
   editColumnTool,
   renameTableTool,
+  exportSqlTool,
   createFlowCanvasTool,
   addFlowNodeTool,
   updateFlowNodeTool,
