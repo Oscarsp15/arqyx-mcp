@@ -46,6 +46,26 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
         if (!parsed.success) return;
         if (parsed.data.type === 'node:moved') {
           dispatchNodeMoved(store, parsed.data.canvasId, parsed.data.nodeId, parsed.data.position);
+          return;
+        }
+        if (parsed.data.type === 'erd:table:add') {
+          store.addTable(parsed.data.canvasId as CanvasId, {
+            name: parsed.data.name,
+            position: parsed.data.position,
+          });
+          return;
+        }
+        if (parsed.data.type === 'erd:table:rename') {
+          store.renameTable(
+            parsed.data.canvasId as CanvasId,
+            parsed.data.tableId as TableId,
+            parsed.data.newName,
+          );
+          return;
+        }
+        if (parsed.data.type === 'erd:table:remove') {
+          store.removeTable(parsed.data.canvasId as CanvasId, parsed.data.tableId as TableId);
+          return;
         }
       } catch (error) {
         if (error instanceof DomainError) return;

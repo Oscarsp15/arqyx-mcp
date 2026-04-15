@@ -1,5 +1,6 @@
 import { Handle, type NodeProps, Position } from '@xyflow/react';
-import { Key } from 'lucide-react';
+import { Key, X } from 'lucide-react';
+import { useState } from 'react';
 
 export type TableColumnView = {
   id: string;
@@ -12,16 +13,70 @@ export type TableColumnView = {
 
 export type TableNodeData = {
   label: string;
+  onRename?: (newName: string) => void;
+  onRemove?: () => void;
   columns: readonly TableColumnView[];
 };
 
 export function TableNode({ data }: NodeProps) {
   const typed = data as TableNodeData;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(typed.label);
+
+  const handleEditSubmit = () => {
+    setIsEditing(false);
+    const trimmed = editValue.trim();
+    if (trimmed !== typed.label && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
+      typed.onRename?.(trimmed);
+    } else {
+      setEditValue(typed.label);
+    }
+  };
+
   return (
     <div className="min-w-52 rounded-md border border-border bg-background shadow-sm">
       <Handle type="target" position={Position.Left} />
-      <div className="border-border border-b bg-muted px-3 py-2">
-        <span className="font-medium text-foreground text-sm">{typed.label}</span>
+      <div className="flex items-center justify-between border-border border-b bg-muted px-3 py-2">
+        {isEditing ? (
+          <input
+            className="w-full bg-background px-1 py-0.5 text-sm font-medium text-foreground outline-none ring-1 ring-ring"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleEditSubmit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleEditSubmit();
+              if (e.key === 'Escape') {
+                setEditValue(typed.label);
+                setIsEditing(false);
+              }
+            }}
+            // biome-ignore lint/a11y/noAutofocus: input inline editing demands immediate focus
+            autoFocus
+          />
+        ) : (
+          <span
+            className="font-medium text-foreground text-sm"
+            onDoubleClick={() => {
+              setEditValue(typed.label);
+              setIsEditing(true);
+            }}
+          >
+            {typed.label}
+          </span>
+        )}
+        {typed.onRemove && (
+          <button
+            type="button"
+            className="ml-2 text-muted-foreground hover:text-red-500 cursor-pointer"
+            onClick={() => {
+              if (window.confirm(`¿Deseas eliminar la tabla "${typed.label}"?`)) {
+                typed.onRemove?.();
+              }
+            }}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
       {typed.columns.length === 0 ? (
         <div className="px-3 py-2 text-muted-foreground text-xs italic">Sin columnas</div>

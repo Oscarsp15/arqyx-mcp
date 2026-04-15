@@ -12,6 +12,9 @@ export type CanvasWsState = {
   canvas: Canvas | null;
   status: ConnectionStatus;
   moveNode: MoveNodeFn;
+  addTable: (canvasId: string, name: string, position: { x: number; y: number }) => void;
+  renameTable: (canvasId: string, tableId: string, newName: string) => void;
+  removeTable: (canvasId: string, tableId: string) => void;
 };
 
 export function useCanvasWs(url: string): CanvasWsState {
@@ -35,5 +38,17 @@ export function useCanvasWs(url: string): CanvasWsState {
     clientRef.current?.send({ type: 'node:moved', canvasId, nodeId, position });
   };
 
-  return { canvas, status, moveNode };
+  const addTable = (canvasId: string, name: string, position: { x: number; y: number }) => {
+    clientRef.current?.send({ type: 'erd:table:add', canvasId, name, position });
+  };
+
+  const renameTable = (canvasId: string, tableId: string, newName: string) => {
+    clientRef.current?.send({ type: 'erd:table:rename', canvasId, tableId, newName });
+  };
+
+  const removeTable = (canvasId: string, tableId: string) => {
+    clientRef.current?.send({ type: 'erd:table:remove', canvasId, tableId });
+  };
+
+  return { canvas, status, moveNode, addTable, renameTable, removeTable };
 }
