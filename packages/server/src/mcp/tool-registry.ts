@@ -21,6 +21,7 @@ import { createFlowCanvasTool } from './tools/flow/create-canvas.js';
 import { exportMermaidTool } from './tools/flow/export-mermaid.js';
 import { removeFlowEdgeTool } from './tools/flow/remove-edge.js';
 import { removeFlowNodeTool } from './tools/flow/remove-node.js';
+import { renameFlowNodeTool } from './tools/flow/rename-node.js';
 import { updateFlowNodeTool } from './tools/flow/update-node.js';
 
 const allTools: readonly Tool[] = [
@@ -42,6 +43,7 @@ const allTools: readonly Tool[] = [
   createFlowCanvasTool,
   addFlowNodeTool,
   updateFlowNodeTool,
+  renameFlowNodeTool,
   removeFlowNodeTool,
   connectFlowNodesTool,
   removeFlowEdgeTool,

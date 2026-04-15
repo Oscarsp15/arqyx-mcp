@@ -85,6 +85,18 @@ export function updateNodeInFlow(
   };
 }
 
+export function renameFlowNodeInCanvas(
+  canvas: FlowCanvas,
+  nodeId: FlowNodeId,
+  newLabel: string,
+): FlowCanvas {
+  requireFlowNode(canvas, nodeId);
+  return {
+    ...canvas,
+    nodes: canvas.nodes.map((node) => (node.id === nodeId ? { ...node, label: newLabel } : node)),
+  };
+}
+
 export function removeNodeFromFlow(canvas: FlowCanvas, nodeId: FlowNodeId): FlowCanvas {
   requireFlowNode(canvas, nodeId);
   return {
