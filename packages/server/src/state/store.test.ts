@@ -290,3 +290,25 @@ describe('CanvasStore.get', () => {
     expect(fetched && 'tables' in fetched && fetched.tables).toHaveLength(1);
   });
 });
+
+describe('CanvasStore.listCanvases', () => {
+  it('returns summaries with id, name and kind for each canvas', () => {
+    const store = createTestStore();
+    const erdCanvas = store.createErdCanvas('Modelo');
+    const flowCanvas = store.createFlowCanvas('Proceso');
+
+    expect(store.listCanvases()).toEqual([
+      { id: erdCanvas.id, name: 'Modelo', kind: 'erd' },
+      { id: flowCanvas.id, name: 'Proceso', kind: 'flow' },
+    ]);
+  });
+
+  it('returns copies without exposing stored canvases', () => {
+    const store = createTestStore();
+    store.createErdCanvas('Modelo');
+
+    const listed = store.listCanvases();
+    expect(listed[0]).toEqual({ id: 'canvas-1', name: 'Modelo', kind: 'erd' });
+    expect(listed[0]).not.toBe(store.get('canvas-1' as CanvasId));
+  });
+});
