@@ -3,6 +3,7 @@ import {
   type CanvasId,
   ClientToServerMessage,
   DomainError,
+  type FlowNodeId,
   type ServerToClientMessage,
   type TableId,
 } from '@arqyx/shared';
@@ -44,11 +45,7 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
         const parsed = ClientToServerMessage.safeParse(json);
         if (!parsed.success) return;
         if (parsed.data.type === 'node:moved') {
-          store.moveTable(
-            parsed.data.canvasId as CanvasId,
-            parsed.data.nodeId as TableId,
-            parsed.data.position,
-          );
+          dispatchNodeMoved(store, parsed.data.canvasId, parsed.data.nodeId, parsed.data.position);
         }
       } catch (error) {
         if (error instanceof DomainError) return;
@@ -66,4 +63,22 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
       });
     },
   };
+}
+
+function dispatchNodeMoved(
+  store: CanvasStore,
+  canvasId: string,
+  nodeId: string,
+  position: { x: number; y: number },
+): void {
+  const canvas = store.get(canvasId as CanvasId);
+  if (!canvas) return;
+  if (canvas.kind === 'erd') {
+    store.moveTable(canvasId as CanvasId, nodeId as TableId, position);
+    return;
+  }
+  if (canvas.kind === 'flow') {
+    store.updateFlowNode(canvasId as CanvasId, nodeId as FlowNodeId, { position });
+    return;
+  }
 }

@@ -1,8 +1,10 @@
+import type { Canvas } from '@arqyx/shared';
 import {
   Background,
   Controls,
   type Edge,
   MiniMap,
+  type Node,
   type NodeTypes,
   ReactFlow,
   useEdgesState,
@@ -10,34 +12,63 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useEffect } from 'react';
-import {
-  type ErdNode,
-  erdCanvasToEdges,
-  erdCanvasToNodes,
-} from './features/erd/canvas-to-nodes.js';
+import { erdCanvasToEdges, erdCanvasToNodes } from './features/erd/canvas-to-nodes.js';
 import { ConnectionIndicator } from './features/erd/connection-indicator.js';
 import { TableNode } from './features/erd/table-node.js';
 import { useCanvasWs } from './features/erd/use-canvas-ws.js';
+import { flowCanvasToEdges, flowCanvasToNodes } from './features/flow/canvas-to-nodes.js';
+import { FlowNode } from './features/flow/flow-node.js';
 import { ThemeProvider } from './features/theme/theme-provider.js';
 import { ThemeToggle } from './features/theme/theme-toggle.js';
 
 const WS_URL = `ws://${window.location.hostname}:7777/ws`;
 
-const nodeTypes: NodeTypes = { table: TableNode };
+const nodeTypes: NodeTypes = {
+  table: TableNode,
+  flow: FlowNode,
+};
+
+function canvasToGraph(canvas: Canvas | null): { nodes: Node[]; edges: Edge[] } {
+  if (canvas === null) return { nodes: [], edges: [] };
+  switch (canvas.kind) {
+    case 'erd':
+      return { nodes: erdCanvasToNodes(canvas), edges: erdCanvasToEdges(canvas) };
+    case 'flow':
+      return { nodes: flowCanvasToNodes(canvas), edges: flowCanvasToEdges(canvas) };
+    case 'aws':
+      return { nodes: [], edges: [] };
+    default: {
+      const exhaustive: never = canvas;
+      return exhaustive;
+    }
+  }
+}
+
+function canvasKindLabel(canvas: Canvas | null): string {
+  if (canvas === null) return 'Sin lienzo';
+  switch (canvas.kind) {
+    case 'erd':
+      return `ERD · ${canvas.name}`;
+    case 'flow':
+      return `Flow · ${canvas.name}`;
+    case 'aws':
+      return `AWS · ${canvas.name}`;
+    default: {
+      const exhaustive: never = canvas;
+      return exhaustive;
+    }
+  }
+}
 
 export function App() {
   const { canvas, status, moveNode } = useCanvasWs(WS_URL);
-  const [nodes, setNodes, onNodesChange] = useNodesState<ErdNode>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   useEffect(() => {
-    if (canvas?.kind === 'erd') {
-      setNodes(erdCanvasToNodes(canvas));
-      setEdges(erdCanvasToEdges(canvas));
-      return;
-    }
-    setNodes([]);
-    setEdges([]);
+    const graph = canvasToGraph(canvas);
+    setNodes(graph.nodes);
+    setEdges(graph.edges);
   }, [canvas, setNodes, setEdges]);
 
   return (
@@ -46,9 +77,7 @@ export function App() {
         <header className="flex h-12 items-center justify-between border-border border-b px-4">
           <h1 className="font-medium text-sm">Arqyx</h1>
           <div className="flex items-center gap-4">
-            <span className="text-muted-foreground text-xs">
-              {canvas ? canvas.name : 'Sin lienzo'}
-            </span>
+            <span className="text-muted-foreground text-xs">{canvasKindLabel(canvas)}</span>
             <ConnectionIndicator status={status} />
             <ThemeToggle />
           </div>
