@@ -4,14 +4,7 @@ import { FlowEdgeId, FlowNodeId } from './ids.js';
 export const FlowNodeShape = z.enum(['rectangle', 'rounded', 'diamond', 'circle', 'note']);
 export type FlowNodeShape = z.infer<typeof FlowNodeShape>;
 
-export const FlowNodeColor = z.enum([
-  'neutral',
-  'blue',
-  'green',
-  'amber',
-  'red',
-  'purple',
-]);
+export const FlowNodeColor = z.enum(['neutral', 'blue', 'green', 'amber', 'red', 'purple']);
 export type FlowNodeColor = z.infer<typeof FlowNodeColor>;
 
 export const FlowNode = z.object({
