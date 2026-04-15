@@ -1,0 +1,128 @@
+name: PR validation
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+    branches: [main]
+
+concurrency:
+  group: pr-validation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate branch name (§23.1)
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          LABELS: ${{ toJson(github.event.pull_request.labels) }}
+        run: |
+          set -e
+          echo "Rama a validar: $BRANCH"
+
+          # Excepción: label skip-branch-check (§23.6 fixes triviales)
+          if echo "$LABELS" | grep -q '"skip-branch-check"'; then
+            echo "::notice::Rama exenta de §23.1 por label skip-branch-check"
+            exit 0
+          fi
+
+          # Formato exigido por §23.1: <tipo>/<N>-<slug>
+          # tipos permitidos: feat, fix, refactor, docs, chore, test, perf, style, build, ci, revert
+          if echo "$BRANCH" | grep -qE '^(feat|fix|refactor|docs|chore|test|perf|style|build|ci|revert)/[0-9]+-[a-z0-9][a-z0-9-]*$'; then
+            echo "::notice::Nombre de rama válido según §23.1"
+            exit 0
+          fi
+
+          echo "::error::Nombre de rama '$BRANCH' no cumple §23.1."
+          echo "::error::Formato esperado: <tipo>/<N>-<slug>"
+          echo "::error::Tipos permitidos: feat, fix, refactor, docs, chore, test, perf, style, build, ci, revert"
+          echo "::error::Ejemplo válido: feat/42-add-sql-export"
+          echo "::error::Si es un caso de §23.6 (fix trivial, CI roto, tarea directa del humano), añade la label 'skip-branch-check' al PR."
+          exit 1
+
+      - name: Validate PR body sections (§21.4)
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -e
+          if [ -z "$BODY" ]; then
+            echo "::error::El cuerpo del PR está vacío. §21.4 exige 6 secciones obligatorias."
+            exit 1
+          fi
+
+          required_sections=(
+            "## Resumen"
+            "## Cambios"
+            "## Secciones de AGENTS.md aplicadas"
+            "## Test plan"
+            "## Fuera de alcance"
+            "## Riesgos"
+          )
+
+          missing=0
+          for section in "${required_sections[@]}"; do
+            if ! echo "$BODY" | grep -qF "$section"; then
+              echo "::error::Sección obligatoria faltante en el cuerpo del PR: $section"
+              missing=$((missing + 1))
+            fi
+          done
+
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::$missing secciones de §21.4 faltan en el cuerpo del PR."
+            echo "::error::Ver .github/PULL_REQUEST_TEMPLATE.md para la plantilla completa."
+            exit 1
+          fi
+
+          echo "::notice::Todas las secciones §21.4 presentes"
+
+      - name: Validate visual review section when UI changed (§20.13)
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -e
+
+          ui_changed=0
+          if git diff --name-only "$BASE_SHA".."$HEAD_SHA" | grep -qE '^(packages/ui/|.*globals\.css$)'; then
+            ui_changed=1
+          fi
+
+          if git diff "$BASE_SHA".."$HEAD_SHA" -- packages/ui/package.json | grep -qE '^\+.*"(lucide-react|@xyflow/react|tailwindcss|@tailwindcss/vite|react|react-dom)"'; then
+            ui_changed=1
+          fi
+
+          if [ "$ui_changed" -eq 0 ]; then
+            echo "::notice::Este PR no toca UI, sección de revisión visual no requerida"
+            exit 0
+          fi
+
+          echo "Diff toca UI — sección de revisión visual obligatoria (§20.13)"
+
+          if ! echo "$BODY" | grep -qiE '^## Revisión visual'; then
+            echo "::error::El diff toca archivos de UI pero el cuerpo del PR no contiene la sección '## Revisión visual' (§20.13 + §22.2)."
+            echo "::error::Añade la sección al body, ya sea con el checkbox marcado tras validación humana o con 'no aplica' justificado."
+            exit 1
+          fi
+
+          # Anti-simulación (§18.4): si el checkbox de revisión está marcado,
+          # exigimos una nota que haga explícito quién validó.
+          if echo "$BODY" | grep -qE '^\s*-\s*\[x\]\s*He abierto el'; then
+            echo "::notice::Checkbox de revisión visual marcado. Verificando autoría."
+            if echo "$BODY" | grep -qE '^\s*-\s*\[\s*\]\s*No aplica'; then
+              echo "::warning::El checkbox de revisión está marcado Y el de 'No aplica' también. Inconsistencia sospechosa."
+            fi
+            echo "::notice::Revisión visual declarada completa"
+          elif echo "$BODY" | grep -qE '^\s*-\s*\[x\]\s*No aplica'; then
+            echo "::notice::Marcado como 'no aplica'"
+          else
+            echo "::warning::La sección '## Revisión visual' existe pero no tiene ningún checkbox marcado. Recuerda marcar una de las dos opciones antes de pedir merge."
+          fi
