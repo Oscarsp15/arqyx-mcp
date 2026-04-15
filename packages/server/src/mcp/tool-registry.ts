@@ -18,6 +18,7 @@ import { addFlowNodeTool } from './tools/flow/add-node.js';
 import { autoLayoutFlowTool } from './tools/flow/auto-layout.js';
 import { connectFlowNodesTool } from './tools/flow/connect-nodes.js';
 import { createFlowCanvasTool } from './tools/flow/create-canvas.js';
+import { exportMermaidTool } from './tools/flow/export-mermaid.js';
 import { removeFlowEdgeTool } from './tools/flow/remove-edge.js';
 import { removeFlowNodeTool } from './tools/flow/remove-node.js';
 import { updateFlowNodeTool } from './tools/flow/update-node.js';
@@ -45,6 +46,7 @@ const allTools: readonly Tool[] = [
   connectFlowNodesTool,
   removeFlowEdgeTool,
   autoLayoutFlowTool,
+  exportMermaidTool,
 ];
 
 export function listTools(): readonly Tool[] {
