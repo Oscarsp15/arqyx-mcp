@@ -11,6 +11,7 @@ import {
   addRelationToCanvas,
   addTableToCanvas,
   createEmptyErdCanvas,
+  editColumnInTable,
   moveTableInCanvas,
   removeColumnFromTable,
   removeRelationFromCanvas,
@@ -206,6 +207,49 @@ describe('renameColumnInTable', () => {
     expect(() => renameColumnInTable(withSecondCol, tableId, 'col-2' as ColumnId, 'email')).toThrow(
       DomainError,
     );
+  });
+});
+
+describe('editColumnInTable', () => {
+  const tableId = 'tbl-1' as TableId;
+  const columnId = 'col-1' as ColumnId;
+  const base = addColumnToTable(
+    addTableToCanvas(createEmptyErdCanvas(canvasId, 'Mi base'), {
+      id: tableId,
+      name: 'users',
+      position: { x: 0, y: 0 },
+    }),
+    tableId,
+    {
+      id: columnId,
+      name: 'email',
+      type: 'text',
+      isPrimaryKey: false,
+      isNullable: true,
+      isUnique: false,
+    },
+  );
+
+  it('updates the specified properties of a column leaving others intact', () => {
+    const next = editColumnInTable(base, tableId, columnId, {
+      isUnique: true,
+      type: 'varchar',
+    });
+    const edited = next.tables[0]?.columns[0];
+    const original = base.tables[0]?.columns[0];
+
+    expect(edited?.type).toBe('varchar');
+    expect(edited?.isUnique).toBe(true);
+    expect(edited?.isNullable).toBe(true);
+    expect(edited?.name).toBe('email');
+
+    expect(original?.type).toBe('text');
+  });
+
+  it('throws COLUMN_NOT_FOUND when the column does not exist', () => {
+    expect(() =>
+      editColumnInTable(base, tableId, 'missing' as ColumnId, { isPrimaryKey: true }),
+    ).toThrow(DomainError);
   });
 });
 

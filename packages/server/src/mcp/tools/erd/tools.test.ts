@@ -7,6 +7,7 @@ import { readCanvasTool } from '../canvas/read-canvas.js';
 import { addColumnTool } from './add-column.js';
 import { addTableTool } from './add-table.js';
 import { createErdCanvasTool } from './create-canvas.js';
+import { editColumnTool } from './edit-column.js';
 import { removeColumnTool } from './remove-column.js';
 import { renameColumnTool } from './rename-column.js';
 import { renameTableTool } from './rename-table.js';
@@ -207,6 +208,51 @@ describe('rename_column tool', () => {
         tableId: 't1',
         columnId: 'col1',
         newName: '9bad',
+      }),
+    ).toThrow();
+  });
+});
+
+describe('edit_column tool', () => {
+  it('edits a column successfully', async () => {
+    const context = createContext();
+    const canvas = context.store.createErdCanvas('Mi base');
+    const withTable = context.store.addTable(canvas.id, {
+      name: 'users',
+      position: { x: 0, y: 0 },
+    });
+    const tableId = withTable.tables[0]?.id;
+    if (!tableId) throw new Error('table id missing');
+    const withColumn = context.store.addColumn(canvas.id, tableId, {
+      name: 'email',
+      type: 'text',
+      isPrimaryKey: false,
+      isNullable: false,
+      isUnique: true,
+    });
+    const columnId = withColumn.tables[0]?.columns[0]?.id;
+    if (!columnId) throw new Error('column id missing');
+
+    const result = await editColumnTool.handler(
+      { canvasId: canvas.id, tableId, columnId, type: 'varchar', isUnique: false },
+      context,
+    );
+
+    expect(result.content[0]?.text).toContain('actualizada correctamente');
+    const stored = context.store.get(canvas.id);
+    const editedCol = stored?.kind === 'erd' ? stored.tables[0]?.columns[0] : null;
+    expect(editedCol?.type).toBe('varchar');
+    expect(editedCol?.isUnique).toBe(false);
+    expect(editedCol?.isNullable).toBe(false);
+  });
+
+  it('rejects invalid sql types via schema', () => {
+    expect(() =>
+      editColumnTool.inputSchema.parse({
+        canvasId: 'c1',
+        tableId: 't1',
+        columnId: 'col1',
+        type: 'invalid_type',
       }),
     ).toThrow();
   });

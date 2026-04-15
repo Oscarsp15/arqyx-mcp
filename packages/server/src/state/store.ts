@@ -17,10 +17,12 @@ import {
   type TableId,
 } from '@arqyx/shared';
 import {
+  type ColumnPatch,
   addColumnToTable,
   addRelationToCanvas,
   addTableToCanvas,
   createEmptyErdCanvas,
+  editColumnInTable,
   moveTableInCanvas,
   removeColumnFromTable,
   removeRelationFromCanvas,
@@ -171,6 +173,19 @@ export class CanvasStore {
   ): ErdCanvas {
     const canvas = this.requireErdCanvas(canvasId);
     const next = renameColumnInTable(canvas, tableId, columnId, newName);
+    this.canvases.set(canvasId, next);
+    this.emit({ type: 'canvas:updated', canvas: next });
+    return next;
+  }
+
+  editColumn(
+    canvasId: CanvasId,
+    tableId: TableId,
+    columnId: ColumnId,
+    patch: ColumnPatch,
+  ): ErdCanvas {
+    const canvas = this.requireErdCanvas(canvasId);
+    const next = editColumnInTable(canvas, tableId, columnId, patch);
     this.canvases.set(canvasId, next);
     this.emit({ type: 'canvas:updated', canvas: next });
     return next;
