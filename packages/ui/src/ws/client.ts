@@ -32,14 +32,8 @@ export function connectCanvasWs(url: string, handlers: CanvasWsHandlers): Canvas
 
   return {
     send: (message) => {
-      console.log('WS send called', message, 'readyState:', socket.readyState);
-      console.log('WS url is:', url);
-      if (socket.readyState !== WebSocket.OPEN) {
-        console.warn('Socket not open, readyState:', socket.readyState);
-        return;
-      }
+      if (socket.readyState !== WebSocket.OPEN) return;
       socket.send(JSON.stringify(message));
-      console.log('message dispatched completely');
     },
     close: () => socket.close(),
   };

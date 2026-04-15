@@ -13,7 +13,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Panel } from '@xyflow/react';
 import { Plus } from 'lucide-react';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { erdCanvasToEdges, erdCanvasToNodes } from './features/erd/canvas-to-nodes.js';
 import { ConnectionIndicator } from './features/erd/connection-indicator.js';
 import { TableNode } from './features/erd/table-node.js';
@@ -77,33 +77,55 @@ export function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
+  // Ref para acceder al canvas actual desde closures sin stale values
+  const canvasRef = useRef<Canvas | null>(null);
+  canvasRef.current = canvas;
+
+  // Handlers estables que siempre acceden al canvas actual via ref
+  const handleRename = useCallback(
+    (tableId: string, newName: string) => {
+      const currentCanvas = canvasRef.current;
+      if (currentCanvas?.id) {
+        renameTable(currentCanvas.id, tableId, newName);
+      }
+    },
+    [renameTable],
+  );
+
+  const handleRemove = useCallback(
+    (tableId: string) => {
+      const currentCanvas = canvasRef.current;
+      if (currentCanvas?.id) {
+        removeTable(currentCanvas.id, tableId);
+      }
+    },
+    [removeTable],
+  );
+
   useEffect(() => {
     const graph = canvasToGraph(canvas, {
       erd: {
-        onRename: (tableId, newName) => {
-          if (canvas?.id) renameTable(canvas.id, tableId, newName);
-        },
-        onRemove: (tableId) => {
-          if (canvas?.id) removeTable(canvas.id, tableId);
-        },
+        onRename: handleRename,
+        onRemove: handleRemove,
       },
     });
     setNodes(graph.nodes);
     setEdges(graph.edges);
-  }, [canvas, setNodes, setEdges, renameTable, removeTable]);
+  }, [canvas, setNodes, setEdges, handleRename, handleRemove]);
 
-  const handleAddTable = () => {
-    if (!canvas || canvas.kind !== 'erd') return;
+  const handleAddTable = useCallback(() => {
+    const currentCanvas = canvasRef.current;
+    if (!currentCanvas || currentCanvas.kind !== 'erd') return;
     let index = 1;
     let name = `nueva_tabla_${index}`;
-    while (canvas.tables.some((t) => t.name === name)) {
+    while (currentCanvas.tables.some((t) => t.name === name)) {
       index++;
       name = `nueva_tabla_${index}`;
     }
     const x = Math.floor(Math.random() * 200);
     const y = Math.floor(Math.random() * 200);
-    addTable(canvas.id, name, { x, y });
-  };
+    addTable(currentCanvas.id, name, { x, y });
+  }, [addTable]);
 
   return (
     <ThemeProvider>
