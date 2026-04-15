@@ -6,6 +6,7 @@ import type { ToolContext } from '../../tool.js';
 import { addFlowNodeTool } from './add-node.js';
 import { connectFlowNodesTool } from './connect-nodes.js';
 import { createFlowCanvasTool } from './create-canvas.js';
+import { exportMermaidTool } from './export-mermaid.js';
 import { removeFlowEdgeTool } from './remove-edge.js';
 import { removeFlowNodeTool } from './remove-node.js';
 import { updateFlowNodeTool } from './update-node.js';
@@ -189,6 +190,32 @@ describe('connect_flow_nodes tool', () => {
         context,
       ),
     ).rejects.toThrow(DomainError);
+  });
+});
+
+describe('export_mermaid tool', () => {
+  it('generates a Mermaid flowchart string for a given canvas', async () => {
+    const context = createContext();
+    const canvas = context.store.createFlowCanvas('Demo');
+    const start = await addStartNode(context, canvas.id);
+    if (!start) throw new Error('missing node');
+
+    const result = await exportMermaidTool.handler(
+      { canvasId: canvas.id, direction: 'LR' },
+      context,
+    );
+
+    expect(result.content[0]?.text).toContain('flowchart LR');
+    expect(result.content[0]?.text).toContain(`${start.id}(Inicio)`);
+  });
+
+  it('rejects unsupported directions via schema', () => {
+    expect(() =>
+      exportMermaidTool.inputSchema.parse({
+        canvasId: 'c1',
+        direction: 'BT',
+      }),
+    ).toThrow();
   });
 });
 
