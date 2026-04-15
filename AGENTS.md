@@ -1323,3 +1323,95 @@ chat privado o memoria de sesión.
 **Prohibido** asumir que otro agente recuerda una conversación anterior.
 Cada sesión de cada agente empieza de cero; lo que no está en el repo
 nunca existió.
+
+### 23.8 Comentarios dirigidos al humano
+
+Cuando un agente deja un comentario en un issue o PR pidiendo **acción
+humana** (revisión visual, prueba manual en navegador, decisión técnica,
+smoke test, intervención manual), el comentario debe ser **auto-contenido
+y asumir cero contexto previo del proyecto**.
+
+El agente que comenta tiene contexto completo del repo; el humano puede
+estar respondiendo desde el móvil, en otra máquina, o sin recordar dónde
+estaban los servicios corriendo. La carga de claridad la lleva siempre
+el agente, no el humano.
+
+**Estructura obligatoria del comentario**:
+
+1. **Verbo de acción inicial**: qué hay que hacer en una frase
+   (ej. *"Validar visualmente los iconos del PR #40 en ambos temas"*).
+2. **Pasos numerados con comandos exactos**, no abreviaturas:
+   - Cada `cd` con la **ruta absoluta** o el cwd explícito en la línea
+     anterior.
+   - Cada comando completo, sin asumir alias o variables del shell del
+     humano.
+   - Si depende de un servicio corriendo (Vite, dev server), incluir el
+     comando para arrancarlo.
+3. **URL, puerto o ruta** donde mirar, si aplica.
+4. **Qué observar específicamente** (no "verificar que está bien", sino
+   "verificar que el icono X aparece en la posición Y con el color Z").
+5. **Qué hacer si algo sale mal**: qué reportar, qué comando ejecutar
+   para volver atrás, o cuándo pedir ayuda.
+
+**Ejemplo malo**:
+
+> *"Validar visualmente."*
+
+**Ejemplo bueno**:
+
+> *"**Pasos para validar el bump de lucide-react en PR #40**:*
+>
+> *1. Cambia a la rama y baja deps:*
+>
+> ```bash
+> cd "C:\Users\sentinel\Documents\MCP - Diseño"
+> git fetch origin chore/33-deps-lucide-1
+> git checkout chore/33-deps-lucide-1
+> pnpm install
+> ```
+>
+> *2. Arranca Vite si no lo tienes corriendo (en otra terminal):*
+>
+> ```bash
+> pnpm --filter @arqyx/ui dev
+> ```
+>
+> *3. Abre `http://localhost:5173` y verifica:*
+>
+> *- El icono de llave (🗝 `Key`) aparece junto a las columnas con
+>     `isPrimaryKey: true` en los nodos de tipo `table`.*
+> *- Los iconos `Moon` (🌙) y `Sun` (☀️) aparecen en el botón toggle
+>     arriba a la derecha del header.*
+>
+> *4. Alterna a tema oscuro con el toggle y verifica los 3 iconos
+>     siguen visibles y con buen contraste.*
+>
+> *5. Si todo OK, comenta `✅ validado en ambos temas` y yo procedo
+>     al merge.*
+>
+> *6. Si algún icono falla (desapareció, cambió forma notablemente, o
+>     contraste roto), comenta `❌ icono <nombre>` y haremos downgrade
+>     con `gh pr close 40` y un nuevo PR pinneando la versión 0.460.0."*
+
+**Reglas duras**:
+
+- **Prohibido** usar *"verifica que está bien"* sin decir **qué**
+  verificar específicamente.
+- **Prohibido** comandos relativos sin cwd explícito (`cd path` o `cwd:
+  path` en la línea anterior).
+- **Prohibido** asumir que el humano sabe qué archivos, paths, puertos
+  o servicios del proyecto son. Cada cosa nombrada se acompaña de su
+  contexto la primera vez.
+- **Prohibido** usar tecnicismos sin glosar (*"el WS hub"* sin explicar
+  qué es) en un comentario dirigido al humano.
+- Si la acción es **destructiva** (force push, delete branch, drop
+  table), explicar en una frase qué pasa si se equivoca y cómo
+  recuperar.
+
+**Criterio de prueba**: lee el comentario como si fueras alguien que
+**nunca ha tocado este repo** y ves el comentario en una notificación de
+GitHub. ¿Puedes ejecutar todos los pasos sin abrir otro archivo del
+repo? Si no, falta contexto.
+
+Esta regla nace del feedback real del PR #40, donde el comentario
+inicial de Claude al humano asumía contexto que no debía asumir.
