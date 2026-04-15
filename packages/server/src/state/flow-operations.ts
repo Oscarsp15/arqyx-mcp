@@ -126,10 +126,7 @@ export function connectNodesInFlow(canvas: FlowCanvas, input: NewFlowEdgeInput):
 export function removeEdgeFromFlow(canvas: FlowCanvas, edgeId: FlowEdgeId): FlowCanvas {
   const exists = canvas.edges.some((edge) => edge.id === edgeId);
   if (!exists) {
-    throw new DomainError(
-      'FLOW_EDGE_NOT_FOUND',
-      'No se encontró la conexión solicitada.',
-    );
+    throw new DomainError('FLOW_EDGE_NOT_FOUND', 'No se encontró la conexión solicitada.');
   }
   return {
     ...canvas,

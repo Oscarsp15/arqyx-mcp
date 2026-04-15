@@ -27,10 +27,10 @@ import {
   removeTableFromCanvas,
 } from './erd-operations.js';
 import {
+  type FlowNodePatch,
   addNodeToFlow,
   connectNodesInFlow,
   createEmptyFlowCanvas,
-  type FlowNodePatch,
   removeEdgeFromFlow,
   removeNodeFromFlow,
   updateNodeInFlow,

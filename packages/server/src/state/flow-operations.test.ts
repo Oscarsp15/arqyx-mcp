@@ -82,9 +82,9 @@ describe('updateNodeInFlow', () => {
 
   it('throws FLOW_NODE_NOT_FOUND when the node does not exist', () => {
     const canvas = baseCanvas();
-    expect(() =>
-      updateNodeInFlow(canvas, 'missing' as FlowNodeId, { label: 'x' }),
-    ).toThrow(DomainError);
+    expect(() => updateNodeInFlow(canvas, 'missing' as FlowNodeId, { label: 'x' })).toThrow(
+      DomainError,
+    );
   });
 });
 
