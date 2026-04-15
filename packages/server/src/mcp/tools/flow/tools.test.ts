@@ -9,6 +9,7 @@ import { createFlowCanvasTool } from './create-canvas.js';
 import { exportMermaidTool } from './export-mermaid.js';
 import { removeFlowEdgeTool } from './remove-edge.js';
 import { removeFlowNodeTool } from './remove-node.js';
+import { renameFlowNodeTool } from './rename-node.js';
 import { updateFlowNodeTool } from './update-node.js';
 
 function createContext(): ToolContext {
@@ -125,6 +126,46 @@ describe('update_flow_node tool', () => {
     expect(stored.nodes[0]?.label).toBe('Comenzar');
     expect(stored.nodes[0]?.color).toBe('blue');
     expect(stored.nodes[0]?.shape).toBe('rounded');
+  });
+});
+
+describe('rename_flow_node tool', () => {
+  it('renames the label of an existing node', async () => {
+    const context = createContext();
+    const canvas = context.store.createFlowCanvas('Demo');
+    const node = await addStartNode(context, canvas.id);
+    if (!node) throw new Error('node missing');
+
+    const result = await renameFlowNodeTool.handler(
+      {
+        canvasId: canvas.id,
+        nodeId: node.id,
+        newLabel: 'Comenzar',
+      },
+      context,
+    );
+
+    expect(result.content[0]?.text).toContain('Comenzar');
+    const stored = context.store.get(canvas.id);
+    if (stored?.kind !== 'flow') throw new Error('expected flow');
+    expect(stored.nodes[0]?.label).toBe('Comenzar');
+    expect(stored.nodes[0]?.shape).toBe('rounded');
+  });
+
+  it('rejects missing nodes', async () => {
+    const context = createContext();
+    const canvas = context.store.createFlowCanvas('Demo');
+
+    await expect(
+      renameFlowNodeTool.handler(
+        {
+          canvasId: canvas.id,
+          nodeId: 'missing',
+          newLabel: 'Comenzar',
+        },
+        context,
+      ),
+    ).rejects.toThrow(DomainError);
   });
 });
 

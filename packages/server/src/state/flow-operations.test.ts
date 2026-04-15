@@ -6,6 +6,7 @@ import {
   createEmptyFlowCanvas,
   removeEdgeFromFlow,
   removeNodeFromFlow,
+  renameFlowNodeInCanvas,
   updateNodeInFlow,
 } from './flow-operations.js';
 
@@ -83,6 +84,27 @@ describe('updateNodeInFlow', () => {
   it('throws FLOW_NODE_NOT_FOUND when the node does not exist', () => {
     const canvas = baseCanvas();
     expect(() => updateNodeInFlow(canvas, 'missing' as FlowNodeId, { label: 'x' })).toThrow(
+      DomainError,
+    );
+  });
+});
+
+describe('renameFlowNodeInCanvas', () => {
+  it('updates only the label of the target node', () => {
+    const canvas = canvasWithTwoNodes();
+
+    const next = renameFlowNodeInCanvas(canvas, 'node-a' as FlowNodeId, 'Comenzar');
+
+    expect(next.nodes[0]?.label).toBe('Comenzar');
+    expect(next.nodes[0]?.shape).toBe(canvas.nodes[0]?.shape);
+    expect(next.nodes[0]?.color).toBe(canvas.nodes[0]?.color);
+    expect(next.nodes[1]).toEqual(canvas.nodes[1]);
+  });
+
+  it('throws FLOW_NODE_NOT_FOUND when the node does not exist', () => {
+    const canvas = canvasWithTwoNodes();
+
+    expect(() => renameFlowNodeInCanvas(canvas, 'missing' as FlowNodeId, 'Comenzar')).toThrow(
       DomainError,
     );
   });

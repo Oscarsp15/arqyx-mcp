@@ -38,6 +38,7 @@ import {
   createEmptyFlowCanvas,
   removeEdgeFromFlow,
   removeNodeFromFlow,
+  renameFlowNodeInCanvas,
   updateNodeInFlow,
 } from './flow-operations.js';
 import type { IdGenerator } from './id-generator.js';
@@ -257,6 +258,14 @@ export class CanvasStore {
   updateFlowNode(canvasId: CanvasId, nodeId: FlowNodeId, patch: FlowNodePatch): FlowCanvas {
     const canvas = this.requireFlowCanvas(canvasId);
     const next = updateNodeInFlow(canvas, nodeId, patch);
+    this.canvases.set(canvasId, next);
+    this.emit({ type: 'canvas:updated', canvas: next });
+    return next;
+  }
+
+  renameFlowNode(canvasId: CanvasId, nodeId: FlowNodeId, newLabel: string): FlowCanvas {
+    const canvas = this.requireFlowCanvas(canvasId);
+    const next = renameFlowNodeInCanvas(canvas, nodeId, newLabel);
     this.canvases.set(canvasId, next);
     this.emit({ type: 'canvas:updated', canvas: next });
     return next;
