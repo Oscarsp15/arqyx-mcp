@@ -90,6 +90,8 @@ export type ConnectFlowNodesInput = {
   arrow: FlowEdgeArrow;
 };
 
+export type CanvasSummary = Readonly<Pick<Canvas, 'id' | 'name' | 'kind'>>;
+
 export class CanvasStore {
   private readonly canvases = new Map<CanvasId, Canvas>();
   private readonly emitter = new EventEmitter();
@@ -118,6 +120,10 @@ export class CanvasStore {
 
   list(): readonly Canvas[] {
     return Array.from(this.canvases.values());
+  }
+
+  listCanvases(): readonly CanvasSummary[] {
+    return Array.from(this.canvases.values(), ({ id, name, kind }) => ({ id, name, kind }));
   }
 
   get(id: CanvasId): Canvas | undefined {
