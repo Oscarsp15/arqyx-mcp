@@ -1048,3 +1048,178 @@ sin mapear. Esta regla los habría prevenido.
 Estas subsecciones (§22.1-22.6) son la base del design system.
 Las siguientes (tipografía escalonada, espaciado, responsive, animaciones,
 semántica HTML) se añadirán cuando empiecen a doler. YAGNI (§12).
+
+---
+
+## 23. Coordinación multi-agente
+
+Este repositorio se desarrolla con **múltiples agentes de IA en paralelo**:
+Claude Code, Antigravity (con Gemini/GPT/Claude internamente), Cursor,
+Copilot en modo agente, y otros que vendrán. Las reglas de §18 (comportamiento
+individual del agente) no bastan cuando hay dos o más trabajando en el mismo
+repo al mismo tiempo. Estas reglas son para evitar que se pisen entre ellos.
+
+Son **agnósticas al modelo**: aplican igual a Claude, Gemini, GPT, o cualquier
+LLM que corra dentro de cualquier IDE agéntico.
+
+### 23.1 Un issue, un agente, un branch
+
+Regla dura: **todo trabajo empieza con un issue en GitHub**. Sin issue, no
+hay branch ni PR (salvo fixes triviales de una línea).
+
+Flujo obligatorio antes de tocar código:
+
+1. **Revisar el backlog** con `gh issue list --state open` o el Project
+   board.
+2. **Elegir un issue sin asignar**. Si todos están asignados a otros
+   agentes, no hay trabajo disponible — no inventes tareas.
+3. **Auto-asignarse** con `gh issue edit <N> --add-assignee @me`. Esto
+   declara intención pública de trabajar en el issue.
+4. **Crear la rama** con el número del issue en el nombre:
+   `<tipo>/<N>-<slug-corto>` — ejemplo: `feat/42-add-sql-export`.
+5. **A partir de ahí, el workflow de §21 aplica normal**.
+
+**Prohibido**:
+
+- Trabajar en un issue ya asignado a otro agente, aunque el otro agente
+  parezca inactivo. Si sospechas abandono, comenta en el issue preguntando
+  y espera respuesta del humano.
+- Auto-asignarse más de **2 issues simultáneamente**. El WIP (work in
+  progress) por agente es pequeño a propósito: Kanban sobre Scrum.
+- Crear una rama sin issue asociado, salvo excepción documentada en la
+  sección §23.5.
+
+### 23.2 Draft PR como señal de "work in progress"
+
+- Si el trabajo lleva > 30 minutos o cruza más de un commit, **abre un
+  Draft PR inmediatamente** — aunque no esté listo para review.
+- El Draft PR es una señal pública para otros agentes: *"este issue está
+  siendo trabajado, no lo tomes".*
+- Cuando el trabajo esté listo, márcalo como "Ready for review" con
+  `gh pr ready <N>`.
+- **Prohibido**: tener cambios locales sin push durante > 2 horas sin un
+  Draft PR que los represente. Si te quedas sin tiempo, pusheas lo que
+  tengas como draft y dejas un comentario en el issue explicando dónde
+  te quedaste.
+
+### 23.3 Handoff entre agentes
+
+A veces un agente empieza un issue y no puede terminarlo (falta de tiempo,
+contexto, capacidad). El handoff debe ser **explícito** para que otro
+agente pueda retomar sin perder trabajo.
+
+Protocolo:
+
+1. Agente original hace `gh issue edit <N> --remove-assignee @me`.
+2. Agente original deja un **comentario estructurado** en el issue:
+
+```markdown
+## Handoff
+
+**Estado actual:** [qué está hecho, qué falta]
+
+**Decisiones tomadas:** [alternativas consideradas y por qué descartadas]
+
+**Bloqueos encontrados:** [si aplica]
+
+**Rama en curso:** `<nombre>` (commit `<sha>`)
+
+**Siguiente paso sugerido:** [lo que haría yo si siguiera]
+```
+
+3. Agente siguiente lee el comentario **completo** antes de tomar el
+   issue. Si no entiende algo, pregunta en el issue antes de continuar.
+4. Agente siguiente se auto-asigna, puede continuar en la misma rama o
+   crear una nueva (a su criterio), y la rama vieja se cierra si queda
+   huérfana.
+
+### 23.4 El humano es el tiebreaker
+
+Cuando dos agentes proponen soluciones distintas en un mismo PR, o cuando
+un agente revisa el PR de otro y discrepa:
+
+- **No hay merge-wars**. Ningún agente cierra un PR de otro sin aprobación
+  humana.
+- El agente que discrepa deja un **comentario en el PR** con su objeción
+  técnica, referencias a secciones de AGENTS.md, y su propuesta alternativa.
+- **El humano decide**. Puede pedir un cambio, mergear tal cual, o cerrar
+  y reabrir con otro enfoque.
+- **Nunca** un agente mergea su propio PR si otro agente ha dejado un
+  comentario sin resolver.
+- Los agentes **pueden aprobar** PRs de otros agentes (review approve),
+  pero esa aprobación no cuenta como autorización para mergear — sigue
+  siendo decisión del humano.
+
+### 23.5 Creación de issues (cuando un agente propone trabajo)
+
+Un agente puede **proponer un issue nuevo** al backlog cuando:
+
+- Encuentra un bug mientras trabaja en otra cosa (y no forma parte del
+  alcance actual — §12 YAGNI, §18.3).
+- Identifica una refactorización necesaria que no puede hacerse en el PR
+  actual.
+- Detecta una regla de AGENTS.md que está faltando.
+- El humano le pide explícitamente crear un issue.
+
+**Reglas para crear un issue**:
+
+1. **Usa la plantilla** apropiada (`bug_report` o `feature_request`) —
+   están en `.github/ISSUE_TEMPLATE/`.
+2. **Título**: formato Conventional Commits en español, ejemplo
+   `feat(erd): añadir export_sql_ddl para PostgreSQL`.
+3. **Labels obligatorios**:
+   - `type:feat`, `type:fix`, `type:refactor`, `type:docs`, `type:chore`
+     (uno y solo uno).
+   - `priority:high`, `priority:normal`, `priority:low` (uno).
+   - Al menos un `area:*` (erd, flow, aws, ui, server, shared, ci, agents).
+4. **No auto-asignarse** al crearlo. El issue entra sin asignar al
+   backlog y el humano (o el propio agente, después) decide cuándo
+   tomarlo.
+5. **Enlazar contexto**: si el issue nace de un PR, conversación o bug
+   detectado, enlázalo en el cuerpo (`Relacionado con #N` o URL).
+6. **Tamaño razonable**: un issue debería completarse en **< 1 día de
+   trabajo**. Si es más grande, divídelo en sub-issues o documenta la
+   división propuesta en el cuerpo.
+7. **No duplicar**: antes de crear, revisa con
+   `gh issue list --search "<palabra-clave>"` si ya existe uno similar.
+
+**Prohibido**:
+
+- Crear issues "por si acaso" para ideas no justificadas por un problema
+  real (§12 YAGNI).
+- Crear un issue y trabajarlo en el mismo turno sin dejar que otros
+  agentes lo vean — salvo que el humano lo apruebe explícitamente.
+- Cerrar issues que no creaste tú salvo que el PR que los resuelve use
+  `Closes #N` (GitHub los cierra automáticamente al mergear, eso sí vale).
+
+### 23.6 Excepciones que NO necesitan issue
+
+Estas excepciones permiten saltarse §23.1 y crear una rama + PR directamente:
+
+- **Fixes triviales de una línea** (typo en comentario, imports ordenados
+  por Biome, formato).
+- **Respuestas urgentes a CI roto en `main`** (aunque el humano debería
+  saberlo en Slack/chat también).
+- **Tareas que el humano pide explícitamente "ahora mismo"** sin pasar
+  por backlog. Estas llevan scope `chore` y una nota *"solicitado
+  directamente por el humano, sin issue"* en el cuerpo del PR.
+
+Todas las demás tareas pasan por issue.
+
+### 23.7 Comunicación entre agentes
+
+Cuando dos agentes necesitan coordinar, la comunicación pasa por
+**artefactos persistentes** (issues, PR comments, commits), **nunca** por
+chat privado o memoria de sesión.
+
+- **Issue comments** — para estado de avance, handoffs, dudas de alcance.
+- **PR comments** — para revisiones técnicas y decisiones de diseño.
+- **Commit messages** — para decisiones que quedan en la historia
+  (§17 y §21.3).
+- **AGENTS.md** — para reglas que deben aplicar a todos los agentes
+  futuros. Si una conversación entre agentes produce una lección
+  reutilizable, **proponer un PR a AGENTS.md**.
+
+**Prohibido** asumir que otro agente recuerda una conversación anterior.
+Cada sesión de cada agente empieza de cero; lo que no está en el repo
+nunca existió.
