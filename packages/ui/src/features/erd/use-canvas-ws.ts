@@ -46,7 +46,12 @@ export function useCanvasWs(url: string): CanvasWsState {
   );
 
   const renameTable = useCallback((canvasId: string, tableId: string, newName: string) => {
-    clientRef.current?.send({ type: 'erd:table:rename', canvasId, tableId, newName });
+    console.log('renameTable called', { canvasId, tableId, newName });
+    if (!clientRef.current) {
+      console.error('clientRef.current is null!');
+      return;
+    }
+    clientRef.current.send({ type: 'erd:table:rename', canvasId, tableId, newName });
   }, []);
 
   const removeTable = useCallback((canvasId: string, tableId: string) => {

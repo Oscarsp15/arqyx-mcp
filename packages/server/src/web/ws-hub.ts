@@ -43,7 +43,11 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
       try {
         const json = JSON.parse(text) as unknown;
         const parsed = ClientToServerMessage.safeParse(json);
-        if (!parsed.success) return;
+        if (!parsed.success) {
+          console.error('[WS] Fallo al parsear mensaje Zod!', parsed.error.issues);
+          return;
+        }
+        console.log('[WS] Mensaje parseado correctamente:', parsed.data.type);
         if (parsed.data.type === 'node:moved') {
           dispatchNodeMoved(store, parsed.data.canvasId, parsed.data.nodeId, parsed.data.position);
           return;
@@ -68,8 +72,12 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
           return;
         }
       } catch (error) {
-        if (error instanceof DomainError) return;
+        if (error instanceof DomainError) {
+          console.error('[WS] DomainError al procesar mensaje:', error.code, error.message);
+          return;
+        }
         if (error instanceof SyntaxError) return;
+        console.error('[WS] Error desconocido:', error);
         throw error;
       }
     });
