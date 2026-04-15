@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-border: oklch(0.922 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.556 0 0);
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-foreground: oklch(0.985 0 0);
+}
+
+:root {
+  --xy-background-pattern-color: oklch(0.85 0 0);
+  --xy-controls-button-background-color: oklch(1 0 0);
+  --xy-controls-button-background-color-hover: oklch(0.97 0 0);
+  --xy-controls-button-color: oklch(0.205 0 0);
+  --xy-controls-button-color-hover: oklch(0.145 0 0);
+  --xy-controls-button-border-color: oklch(0.922 0 0);
+  --xy-minimap-background-color: oklch(1 0 0);
+  --xy-minimap-mask-background-color: oklch(0.145 0 0 / 0.1);
+  --xy-minimap-mask-stroke-color: oklch(0.205 0 0);
+  --xy-minimap-node-background-color: oklch(0.205 0 0);
+  --xy-minimap-node-stroke-color: oklch(0.205 0 0);
+  --xy-edge-stroke: oklch(0.556 0 0);
+  --xy-edge-stroke-selected: oklch(0.205 0 0);
+  --xy-handle-background-color: oklch(0.205 0 0);
+  --xy-handle-border-color: oklch(1 0 0);
+}
+
+[data-theme="dark"] {
+  --color-background: oklch(0.145 0 0);
+  --color-foreground: oklch(0.985 0 0);
+  --color-border: oklch(0.269 0 0);
+  --color-muted: oklch(0.269 0 0);
+  --color-muted-foreground: oklch(0.708 0 0);
+  --color-primary: oklch(0.985 0 0);
+  --color-primary-foreground: oklch(0.205 0 0);
+
+  --xy-background-pattern-color: oklch(0.35 0 0);
+  --xy-controls-button-background-color: oklch(0.205 0 0);
+  --xy-controls-button-background-color-hover: oklch(0.269 0 0);
+  --xy-controls-button-color: oklch(0.985 0 0);
+  --xy-controls-button-color-hover: oklch(1 0 0);
+  --xy-controls-button-border-color: oklch(0.269 0 0);
+  --xy-minimap-background-color: oklch(0.205 0 0);
+  --xy-minimap-mask-background-color: oklch(0.985 0 0 / 0.08);
+  --xy-minimap-mask-stroke-color: oklch(0.985 0 0);
+  --xy-minimap-node-background-color: oklch(0.708 0 0);
+  --xy-minimap-node-stroke-color: oklch(0.985 0 0);
+  --xy-edge-stroke: oklch(0.708 0 0);
+  --xy-edge-stroke-selected: oklch(0.985 0 0);
+  --xy-handle-background-color: oklch(0.985 0 0);
+  --xy-handle-border-color: oklch(0.145 0 0);
+}
+
+.react-flow__minimap {
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.react-flow__controls {
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.react-flow__controls-button {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
