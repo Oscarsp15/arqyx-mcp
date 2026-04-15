@@ -958,6 +958,69 @@ Archivos en la raíz:
 Todo esto ya está en `.gitignore`, pero la regla aquí es: **si tienes duda,
 no lo commitees, pregunta**.
 
+### 21.14 Prohibido crear archivos temporales en el working tree
+
+Cuando un agente necesita escribir texto largo — el body de un PR, una
+respuesta formateada, un plan de trabajo intermedio, output de debug —
+**nunca** lo escribe en un archivo dentro del working tree del repo, ni
+siquiera con intención de borrarlo después.
+
+**Por qué**:
+
+- Los temp files son la causa raíz de commits sucios. Un `git add -A` los
+  stagea sin que el agente lo note.
+- Ensucian `git status` y confunden los reviews.
+- Empujan al agente hacia atajos destructivos como `git push --force`
+  para limpiar el error después (caso real: PR #33).
+- **Añadirlos a `.gitignore` es un anti-patrón**: normaliza el mal
+  hábito y no soluciona el problema de raíz. El agente sigue creando
+  basura, solo que ahora la basura es invisible.
+
+**Alternativas permitidas (todas sin tocar el working tree)**:
+
+1. **Inline con `gh pr create --body "texto..."`**. El body va directo al
+   comando, sin archivo intermedio.
+2. **Heredoc en bash**:
+   ```bash
+   gh pr create --body "$(cat <<'EOF'
+   ## Resumen
+   ...
+   EOF
+   )"
+   ```
+   El texto vive en el shell, no en disco.
+3. **Rutas del sistema fuera del repo**:
+   - Linux/Mac: `/tmp/foo.md`, `$HOME/.cache/foo.md`
+   - Windows cmd: `%TEMP%\foo.md`
+   - Windows PowerShell: `$env:TEMP\foo.md`
+   - **Nunca** dentro del working tree del repo, aunque sea "por un momento".
+4. **Memoria del agente** para texto corto. Los LLMs pueden mantener
+   plantillas y estructuras en su propio context sin necesidad de
+   escribirlas a disco.
+
+**Prohibido explícitamente**:
+
+- Crear `pr_body.md`, `scratch.md`, `notes.txt`, `plan.md`, `tmp.json`,
+  o cualquier archivo similar dentro del working tree.
+- Añadir patrones de temp files al `.gitignore` para ocultar el problema.
+  Si la basura existe, la acción correcta es **no crearla** en primer
+  lugar.
+- Crear archivos "de apoyo" que el agente planea borrar al final.
+  Cualquier cosa que "se borra al final" no debería haberse creado en
+  primer lugar dentro del working tree.
+
+**Si un agente detecta que creó un temp file por error**:
+
+1. `rm <archivo>` inmediatamente, **antes** de cualquier `git add`.
+2. **No** lo commitea.
+3. **No** lo añade a `.gitignore`.
+4. Verifica con `git status` que el working tree vuelve a estar limpio
+   (solo los cambios legítimos del deliverable).
+
+Esta regla nace del caso real del PR #33 (force-push para borrar un
+`pr_body.md` commiteado por error) y del PR #44 (mismo patrón, esta vez
+detenido antes del commit pero aún contaminando `git status`).
+
 ---
 
 ## 22. Design system y tema visual
@@ -1415,3 +1478,93 @@ repo? Si no, falta contexto.
 
 Esta regla nace del feedback real del PR #40, donde el comentario
 inicial de Claude al humano asumía contexto que no debía asumir.
+
+### 23.9 Rol del auditor: reportar, no fixear
+
+Cuando un agente audita el trabajo de otro agente (§23.4), su rol **por
+defecto** es **reportar, no fixear**. La tentación de "arreglarlo yo
+mismo porque es rápido" es un error sistémico que rompe el ciclo de
+aprendizaje del autor original y confunde la autoría del trabajo.
+
+**Responsabilidades del auditor**:
+
+1. Leer el diff completo del PR.
+2. Validar cumplimiento con AGENTS.md en todas las secciones aplicables.
+3. Detectar bugs técnicos, cobertura de tests insuficiente, violaciones
+   de estilo, decisiones de diseño cuestionables.
+4. **Dejar un review estructurado** en el PR con `gh pr review --comment`
+   o `gh pr review --request-changes` (si la cuenta permite request
+   changes — GitHub bloquea request-changes sobre el propio PR).
+5. **NO editar el código** salvo casos excepcionales (ver abajo).
+
+**Estructura obligatoria del review del auditor**:
+
+Para cada finding:
+
+- **Severidad**: `🔴 high` / `🟠 medium` / `🟡 low`.
+- **Ubicación**: `archivo:línea` exacta cuando aplique.
+- **Regla AGENTS.md**: cita la sección violada con `§X.Y`.
+- **Problema**: descripción concisa de qué está mal.
+- **Fix sugerido**: código concreto o prosa clara de cómo resolverlo.
+
+Además, el review debe incluir una **sección "Lo que está bien"** para
+dar contexto positivo. Un review que solo lista problemas desmoraliza al
+autor original y pierde señal.
+
+**Cuándo el auditor SÍ puede editar directamente**:
+
+- **Delegación explícita del humano**: *"auditor, arregla el bug X del
+  PR #Y"*. A partir de esa frase concreta, el auditor tiene permiso
+  para hacer commits sobre la rama del autor original.
+- **Autor original abandonó la tarea**: aplicó §23.3 handoff. En ese
+  caso, el siguiente agente toma el trabajo completo, no solo como
+  auditor.
+- **Fix puramente mecánico**: lint autofix (`pnpm lint:fix`), formato
+  automático (`biome format`), reorder de imports, corrección de typos
+  en comentarios. **Nunca lógica de negocio**.
+- **Correcciones al body del PR** (no al código): sección faltante de
+  §21.4, checkbox de §18.4 mal marcado, descripción incompleta. El body
+  es metadata del PR, no parte del deliverable.
+
+**Cuándo el auditor NO debe editar**:
+
+- **Por defecto**, salvo que aplique una de las excepciones arriba.
+- Cuando el fix involucra lógica de negocio (operaciones puras, schemas,
+  handlers, tests).
+- Cuando el fix cambia la intención o el alcance del autor original.
+- Cuando el fix puede interpretarse de múltiples maneras y requiere
+  decisión.
+- Cuando el autor original aún está activo y puede leer el review y
+  responder.
+
+**Por qué esta regla importa**:
+
+- **Aprendizaje del autor original**: si el auditor limpia silenciosamente,
+  el autor no aprende qué hizo mal y repite los mismos errores.
+- **Trazabilidad**: un review estructurado deja en el historial del PR
+  **qué** se detectó, **por qué**, y **qué** se decidió. Los commits
+  silenciosos del auditor pierden esa información.
+- **Sostenibilidad**: un patrón donde el auditor hace el 15% del trabajo
+  del autor no escala. Si el agente A entrega 85% y el agente B limpia,
+  en el siguiente PR A entrega 70%, luego 50%, y acabamos con un autor
+  pasivo y un auditor exhausto.
+- **Autoría clara**: un PR debe ser atribuible. Si dos agentes
+  commitean sin coordinación, el blame de git se vuelve confuso.
+
+**Patrón correcto de colaboración auditor-autor**:
+
+1. Autor A entrega PR.
+2. Auditor B hace review estructurado con findings.
+3. **Humano decide** el siguiente paso:
+   - *"A, arregla los findings"* → A commitea una nueva versión.
+   - *"B, arregla tú los findings"* → delegación explícita, B commitea
+     sobre la rama de A con autorización.
+   - *"Mergea tal cual, los findings van a follow-ups"* → se crean issues
+     nuevos y se mergea el PR como está.
+4. Auditor B re-revisa si aplica.
+5. Humano mergea cuando esté listo.
+
+Esta regla nace del PR #44 donde Claude Code (auditor) iba a commitear
+directamente sobre la rama de Antigravity para "arreglar 3 findings
+menores" sin delegación explícita del humano. El humano corrigió el
+patrón antes de que ocurriera.
