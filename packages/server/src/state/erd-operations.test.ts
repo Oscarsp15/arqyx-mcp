@@ -285,6 +285,13 @@ describe('renameTableInCanvas', () => {
     expect(original?.name).toBe('users');
   });
 
+  it('allows renaming to the exact same name without throwing', () => {
+    const { canvas, usersId } = buildCanvasWithTwoTables();
+    const next = renameTableInCanvas(canvas, usersId, 'users');
+    const renamed = next.tables.find((table) => table.id === usersId);
+    expect(renamed?.name).toBe('users');
+  });
+
   it('throws TABLE_NOT_FOUND when the table does not exist', () => {
     const { canvas } = buildCanvasWithTwoTables();
     expect(() => renameTableInCanvas(canvas, 'missing' as TableId, 'test')).toThrow(DomainError);

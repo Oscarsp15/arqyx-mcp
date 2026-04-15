@@ -147,7 +147,7 @@ export function renameTableInCanvas(
   newName: string,
 ): ErdCanvas {
   findTable(canvas, tableId);
-  const nameExists = canvas.tables.some((table) => table.name === newName);
+  const nameExists = canvas.tables.some((table) => table.id !== tableId && table.name === newName);
   if (nameExists) {
     throw new DomainError(
       'TABLE_DUPLICATE_NAME',
