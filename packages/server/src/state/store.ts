@@ -38,6 +38,7 @@ import {
   createEmptyFlowCanvas,
   removeEdgeFromFlow,
   removeNodeFromFlow,
+  renameFlowNodeInCanvas,
   updateNodeInFlow,
 } from './flow-operations.js';
 import type { IdGenerator } from './id-generator.js';
@@ -90,6 +91,8 @@ export type ConnectFlowNodesInput = {
   arrow: FlowEdgeArrow;
 };
 
+export type CanvasSummary = Readonly<Pick<Canvas, 'id' | 'name' | 'kind'>>;
+
 export class CanvasStore {
   private readonly canvases = new Map<CanvasId, Canvas>();
   private readonly emitter = new EventEmitter();
@@ -118,6 +121,10 @@ export class CanvasStore {
 
   list(): readonly Canvas[] {
     return Array.from(this.canvases.values());
+  }
+
+  listCanvases(): readonly CanvasSummary[] {
+    return Array.from(this.canvases.values(), ({ id, name, kind }) => ({ id, name, kind }));
   }
 
   get(id: CanvasId): Canvas | undefined {
@@ -251,6 +258,14 @@ export class CanvasStore {
   updateFlowNode(canvasId: CanvasId, nodeId: FlowNodeId, patch: FlowNodePatch): FlowCanvas {
     const canvas = this.requireFlowCanvas(canvasId);
     const next = updateNodeInFlow(canvas, nodeId, patch);
+    this.canvases.set(canvasId, next);
+    this.emit({ type: 'canvas:updated', canvas: next });
+    return next;
+  }
+
+  renameFlowNode(canvasId: CanvasId, nodeId: FlowNodeId, newLabel: string): FlowCanvas {
+    const canvas = this.requireFlowCanvas(canvasId);
+    const next = renameFlowNodeInCanvas(canvas, nodeId, newLabel);
     this.canvases.set(canvasId, next);
     this.emit({ type: 'canvas:updated', canvas: next });
     return next;

@@ -278,6 +278,28 @@ describe('CanvasStore flow methods', () => {
       }),
     ).toThrow(DomainError);
   });
+
+  it('renames an existing flow node and emits canvas:updated', () => {
+    const store = createTestStore();
+    const canvas = store.createFlowCanvas('Mi proceso');
+    const withNode = store.addFlowNode(canvas.id, {
+      shape: 'rounded',
+      color: 'green',
+      label: 'Inicio',
+      description: null,
+      position: { x: 0, y: 0 },
+    });
+    const nodeId = withNode.nodes[0]?.id;
+    if (!nodeId) throw new Error('node id missing');
+
+    const listener = vi.fn<(event: StoreEvent) => void>();
+    store.on(listener);
+
+    const updated = store.renameFlowNode(canvas.id, nodeId, 'Comenzar');
+
+    expect(updated.nodes[0]?.label).toBe('Comenzar');
+    expect(listener).toHaveBeenCalledWith(expect.objectContaining({ type: 'canvas:updated' }));
+  });
 });
 
 describe('CanvasStore.get', () => {
@@ -288,5 +310,27 @@ describe('CanvasStore.get', () => {
     const fetched = store.get(created.id);
     expect(fetched?.kind).toBe('erd');
     expect(fetched && 'tables' in fetched && fetched.tables).toHaveLength(1);
+  });
+});
+
+describe('CanvasStore.listCanvases', () => {
+  it('returns summaries with id, name and kind for each canvas', () => {
+    const store = createTestStore();
+    const erdCanvas = store.createErdCanvas('Modelo');
+    const flowCanvas = store.createFlowCanvas('Proceso');
+
+    expect(store.listCanvases()).toEqual([
+      { id: erdCanvas.id, name: 'Modelo', kind: 'erd' },
+      { id: flowCanvas.id, name: 'Proceso', kind: 'flow' },
+    ]);
+  });
+
+  it('returns copies without exposing stored canvases', () => {
+    const store = createTestStore();
+    store.createErdCanvas('Modelo');
+
+    const listed = store.listCanvases();
+    expect(listed[0]).toEqual({ id: 'canvas-1', name: 'Modelo', kind: 'erd' });
+    expect(listed[0]).not.toBe(store.get('canvas-1' as CanvasId));
   });
 });
