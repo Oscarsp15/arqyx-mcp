@@ -8,6 +8,7 @@ import { addColumnTool } from './add-column.js';
 import { addTableTool } from './add-table.js';
 import { createErdCanvasTool } from './create-canvas.js';
 import { removeColumnTool } from './remove-column.js';
+import { renameColumnTool } from './rename-column.js';
 import { renameTableTool } from './rename-table.js';
 
 function createContext(): ToolContext {
@@ -163,6 +164,48 @@ describe('rename_table tool', () => {
       renameTableTool.inputSchema.parse({
         canvasId: 'c1',
         tableId: 't1',
+        newName: '9bad',
+      }),
+    ).toThrow();
+  });
+});
+
+describe('rename_column tool', () => {
+  it('renames a column successfully', async () => {
+    const context = createContext();
+    const canvas = context.store.createErdCanvas('Mi base');
+    const withTable = context.store.addTable(canvas.id, {
+      name: 'users',
+      position: { x: 0, y: 0 },
+    });
+    const tableId = withTable.tables[0]?.id;
+    if (!tableId) throw new Error('table id missing');
+    const withColumn = context.store.addColumn(canvas.id, tableId, {
+      name: 'email',
+      type: 'text',
+      isPrimaryKey: false,
+      isNullable: false,
+      isUnique: true,
+    });
+    const columnId = withColumn.tables[0]?.columns[0]?.id;
+    if (!columnId) throw new Error('column id missing');
+
+    const result = await renameColumnTool.handler(
+      { canvasId: canvas.id, tableId, columnId, newName: 'correo' },
+      context,
+    );
+
+    expect(result.content[0]?.text).toContain('correo');
+    const stored = context.store.get(canvas.id);
+    expect(stored?.kind === 'erd' && stored.tables[0]?.columns[0]?.name).toBe('correo');
+  });
+
+  it('rejects invalid column names via schema', () => {
+    expect(() =>
+      renameColumnTool.inputSchema.parse({
+        canvasId: 'c1',
+        tableId: 't1',
+        columnId: 'col1',
         newName: '9bad',
       }),
     ).toThrow();
