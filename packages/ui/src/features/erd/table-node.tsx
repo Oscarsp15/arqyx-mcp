@@ -39,7 +39,7 @@ export function TableNode({ data }: NodeProps) {
       <div className="flex items-center justify-between border-border border-b bg-muted px-3 py-2">
         {isEditing ? (
           <input
-            className="w-full bg-background px-1 py-0.5 text-sm font-medium text-foreground outline-none ring-1 ring-ring"
+            className="nodrag nowheel w-full bg-background px-1 py-0.5 text-sm font-medium text-foreground outline-none ring-1 ring-ring"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleEditSubmit}
