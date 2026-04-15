@@ -51,16 +51,20 @@ function RectangleNode({ data, rounded }: NodeSubProps & { rounded: boolean }) {
 function DiamondNode({ data }: NodeSubProps) {
   const colors = colorClassesFor(data.color);
   return (
-    <div className="relative flex h-28 w-40 items-center justify-center">
+    <div className="relative h-36 w-36">
       <div
-        className={`absolute inset-0 rotate-45 border shadow-sm ${colors.container}`}
+        className={`absolute inset-2 rotate-45 border-2 shadow-sm ${colors.container}`}
         aria-hidden="true"
       />
       <Handle type="target" position={Position.Left} />
-      <span className={`relative z-10 max-w-28 text-center font-medium text-xs ${colors.text}`}>
-        {data.label}
-      </span>
+      <Handle type="target" position={Position.Top} />
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <span className={`max-w-20 text-center font-medium text-xs ${colors.text}`}>
+          {data.label}
+        </span>
+      </div>
       <Handle type="source" position={Position.Right} />
+      <Handle type="source" position={Position.Bottom} />
     </div>
   );
 }

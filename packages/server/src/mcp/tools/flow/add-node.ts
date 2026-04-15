@@ -5,10 +5,12 @@ import { defineTool } from '../../tool.js';
 const flowNodeShape = z.enum(['rectangle', 'rounded', 'diamond', 'circle', 'note']);
 const flowNodeColor = z.enum(['neutral', 'blue', 'green', 'amber', 'red', 'purple']);
 
+const STAGGER_OFFSET = 48;
+
 export const addFlowNodeTool = defineTool({
   name: 'add_flow_node',
   description:
-    'Añade un nodo a un lienzo flow. Los shapes disponibles son: rectangle (tareas, cajas genéricas), rounded (inicio y fin de procesos), diamond (decisiones con sí/no), circle (estados o eventos), note (anotaciones tipo post-it). Los colores sugieren categorías: neutral (por defecto), blue (información), green (éxito o inicio), amber (advertencia o decisión), red (error o fin crítico), purple (destacado). La posición es opcional: si no la indicas, auto_layout_flow después puede ordenar todos los nodos automáticamente.',
+    'Añade un nodo a un lienzo flow. Los shapes disponibles son: rectangle (tareas, cajas genéricas), rounded (inicio y fin de procesos), diamond (decisiones con sí/no), circle (estados o eventos), note (anotaciones tipo post-it). Los colores sugieren categorías: neutral (por defecto), blue (información), green (éxito o inicio), amber (advertencia o decisión), red (error o fin crítico), purple (destacado). Si no indicas position, cada nodo nuevo se escalona diagonalmente para que no se apilen; después puedes llamar auto_layout_flow para reorganizar todo con dagre.',
   inputSchema: z
     .object({
       canvasId: z.string().min(1),
@@ -21,16 +23,19 @@ export const addFlowNodeTool = defineTool({
           x: z.number(),
           y: z.number(),
         })
-        .default({ x: 0, y: 0 }),
+        .nullable()
+        .default(null),
     })
     .strict(),
   handler: (input, { store }) => {
-    const updated = store.addFlowNode(input.canvasId as CanvasId, {
+    const canvasId = input.canvasId as CanvasId;
+    const position = input.position ?? computeStaggeredPosition(store, canvasId);
+    const updated = store.addFlowNode(canvasId, {
       label: input.label,
       shape: input.shape,
       color: input.color,
       description: input.description,
-      position: input.position,
+      position,
     });
     const node = updated.nodes[updated.nodes.length - 1];
     return {
@@ -43,3 +48,12 @@ export const addFlowNodeTool = defineTool({
     };
   },
 });
+
+function computeStaggeredPosition(
+  store: Parameters<typeof addFlowNodeTool.handler>[1]['store'],
+  canvasId: CanvasId,
+): { x: number; y: number } {
+  const canvas = store.get(canvasId);
+  const existingCount = canvas?.kind === 'flow' ? canvas.nodes.length : 0;
+  return { x: existingCount * STAGGER_OFFSET, y: existingCount * STAGGER_OFFSET };
+}
