@@ -27,3 +27,8 @@ updates:
     commit-message:
       prefix: ci
       include: scope
+    ignore:
+      # v6 instala pnpm 11 que rechaza lockfileVersion 9.0 (ERR_PNPM_BROKEN_LOCKFILE).
+      # Revisar cuando el lockfile migre a formato 10+ o cuando v6 acepte version input.
+      - dependency-name: pnpm/action-setup
+        update-types: [version-update:semver-major]
