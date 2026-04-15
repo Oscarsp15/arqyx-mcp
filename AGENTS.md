@@ -714,18 +714,23 @@ senior aplicaría en un equipo grande.
 
 ### 21.2 Nombres de ramas
 
-Formato: `<tipo>/<slug-corto-en-ingles>`
+**Formato principal** (cuando hay issue asociado — ver §23.1):
+`<tipo>/<N>-<slug-corto>` donde `<N>` es el número del issue.
 
-- `feat/flow-canvas-domain` — nueva feature
-- `fix/theme-toggle-persistence` — bug fix
-- `refactor/store-events` — refactor sin cambio de comportamiento
-- `docs/agents-github-section` — solo documentación
-- `chore/upgrade-vitest` — mantenimiento (deps, config)
-- `test/erd-operations-edge-cases` — solo tests
-- `perf/canvas-snapshot-broadcast` — mejora de rendimiento
+- `feat/51-list-canvases` — feature del issue #51
+- `fix/72-theme-toggle-persistence` — bug fix del issue #72
+- `chore/33-deps-lucide` — mantenimiento del issue #33
 
-Slug en **inglés ASCII** (§19.1), kebab-case, corto, descriptivo, sin issue
-numbers dentro del nombre (los issues van en el cuerpo del PR).
+**Formato alternativo** (solo para excepciones de §23.6 — sin issue):
+`<tipo>/<slug-corto-en-ingles>`
+
+- `fix/ci-lint-format` — fix urgente de CI roto
+- `docs/typo-readme` — fix trivial de una línea
+
+Slug en **inglés ASCII** (§19.1), kebab-case, corto, descriptivo.
+
+> **Jerarquía**: §23.1 manda cuando hay issue. Este formato alternativo solo
+> aplica a las excepciones documentadas en §23.6.
 
 ### 21.3 Commits — Conventional Commits en español (refuerzo §17 + §19.4)
 
