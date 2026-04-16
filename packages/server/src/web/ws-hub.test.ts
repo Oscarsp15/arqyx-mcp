@@ -259,6 +259,8 @@ describe('WsHub (WebSocket Server)', () => {
     if (updated?.kind === 'erd') {
       expect(updated.tables[0]?.columns).toHaveLength(0);
     }
+  });
+
   it('broadcasts canvas:deleted when a canvas is removed', async () => {
     const canvas = store.createErdCanvas('Delete me');
     const client = new WebSocket(`ws://127.0.0.1:${port}/ws`);
