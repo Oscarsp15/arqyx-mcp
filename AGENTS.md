@@ -933,8 +933,16 @@ con este repo:
    pregunta al humano antes de abrir el PR.
 9. **Siempre corre `pnpm typecheck && pnpm lint && pnpm test`** localmente
    antes de pushear, no dependas del CI para saber si rompiste algo.
-10. **Siempre incluye `Co-Authored-By: Claude <noreply@anthropic.com>`** al
-    final del mensaje de commit cuando el agente es quien escribe.
+10. **Siempre identifica al agente en el commit.** Dos líneas obligatorias
+    al final del mensaje de commit:
+    - `Co-Authored-By: <Nombre del agente> <email>` (atribución).
+    - `Made-with: <herramienta>` (trazabilidad de qué herramienta/IDE generó
+      el cambio: `Claude Code`, `Cursor`, `Codex CLI`, `Aider`, etc.).
+    Ejemplo:
+    ```
+    Co-Authored-By: Claude <noreply@anthropic.com>
+    Made-with: Claude Code
+    ```
 11. **Siempre menciona las secciones de AGENTS.md aplicadas** en el cuerpo
     del PR (sección "Secciones de AGENTS.md aplicadas").
 12. **Siempre incluye `Closes #N`** en el body del PR si resuelve un issue
