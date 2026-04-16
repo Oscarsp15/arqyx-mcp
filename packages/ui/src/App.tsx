@@ -64,22 +64,6 @@ function canvasToGraph(
   }
 }
 
-function canvasKindLabel(canvas: Canvas | null): string {
-  if (canvas === null) return 'Sin lienzo';
-  switch (canvas.kind) {
-    case 'erd':
-      return `ERD · ${canvas.name}`;
-    case 'flow':
-      return `Flow · ${canvas.name}`;
-    case 'aws':
-      return `AWS · ${canvas.name}`;
-    default: {
-      const exhaustive: never = canvas;
-      return exhaustive;
-    }
-  }
-}
-
 function toCanvasOption(canvas: Canvas): CanvasOption {
   return { id: canvas.id, name: canvas.name, kind: canvas.kind };
 }
