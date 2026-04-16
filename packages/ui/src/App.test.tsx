@@ -130,9 +130,8 @@ describe('App', () => {
       expect(screen.getByTestId('graph-labels').textContent).toContain('clientes');
     });
 
-    fireEvent.change(screen.getByLabelText('Lienzo'), {
-      target: { value: 'canvas-2' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Lienzo' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'ERD · Facturacion' }));
 
     await waitFor(() => {
       expect(screen.getByTestId('graph-labels').textContent).toContain('facturas');

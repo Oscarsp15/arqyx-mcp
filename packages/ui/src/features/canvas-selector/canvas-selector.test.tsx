@@ -19,10 +19,9 @@ describe('CanvasSelector', () => {
       />,
     );
 
-    expect(screen.getByText('ERD · Ventas')).toBeTruthy();
-    expect(screen.getByText('Flow · Arquitectura')).toBeTruthy();
-    const selector = screen.getByLabelText('Lienzo') as HTMLSelectElement;
-    expect(selector.value).toBe('canvas-2');
+    expect(screen.getByRole('button', { name: 'Lienzo' }).textContent).toContain(
+      'Flow · Arquitectura',
+    );
   });
 
   it('calls onSelect when the selected canvas changes', () => {
@@ -38,9 +37,8 @@ describe('CanvasSelector', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Lienzo'), {
-      target: { value: 'canvas-2' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Lienzo' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'AWS · Infra' }));
 
     expect(onSelect).toHaveBeenCalledWith('canvas-2');
   });
