@@ -692,6 +692,18 @@ Si el cambio es solo código sin impacto visual (lógica, tests, refactor no
 UI), no aplica y se marca explícitamente: *"no aplica, PR sin impacto
 visual"*.
 
+**Responsabilidad del autor**: cuando el PR requiere validación visual, el
+**autor** es responsable de incluir en el cuerpo del PR instrucciones
+completas para el humano siguiendo §23.8. Estas instrucciones deben
+especificar:
+- Comandos exactos para levantar el entorno (con rutas absolutas)
+- URL/puerto donde validar
+- Qué elementos visuales verificar específicamente (no genérico)
+- Qué hacer si algo falla
+
+El auditor (§23.9) verifica que estas instrucciones estén presentes y sean
+adecuadas como parte del checklist de revisión.
+
 ---
 
 ## 21. GitHub y control de versiones (nivel senior)
@@ -1497,10 +1509,13 @@ aprendizaje del autor original y confunde la autoría del trabajo.
 2. Validar cumplimiento con AGENTS.md en todas las secciones aplicables.
 3. Detectar bugs técnicos, cobertura de tests insuficiente, violaciones
    de estilo, decisiones de diseño cuestionables.
-4. **Dejar un review estructurado** en el PR con `gh pr review --comment`
+4. **Si el PR toca UI** (§20.13 aplica): verificar que el autor incluyó
+   instrucciones completas para validación visual siguiendo §23.8. Si
+   faltan o son insuficientes, es un finding que el autor debe corregir.
+5. **Dejar un review estructurado** en el PR con `gh pr review --comment`
    o `gh pr review --request-changes` (si la cuenta permite request
    changes — GitHub bloquea request-changes sobre el propio PR).
-5. **NO editar el código** salvo casos excepcionales (ver abajo).
+6. **NO editar el código** salvo casos excepcionales (ver abajo).
 
 **Estructura obligatoria del review del auditor**:
 
