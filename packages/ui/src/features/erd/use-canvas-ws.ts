@@ -118,7 +118,6 @@ export function useCanvasWs(url: string, selectedCanvasId: string | null): Canva
 
   const renameColumn = useCallback(
     (canvasId: string, tableId: string, columnId: string, newName: string) => {
-      console.debug('[ws] send erd:column:rename', { canvasId, tableId, columnId, newName });
       clientRef.current?.send({ type: 'erd:column:rename', canvasId, tableId, columnId, newName });
     },
     [],
@@ -131,7 +130,6 @@ export function useCanvasWs(url: string, selectedCanvasId: string | null): Canva
       columnId: string,
       patch: { colType?: SqlType } & ColumnFlags,
     ) => {
-      console.debug('[ws] send erd:column:edit', { canvasId, tableId, columnId, patch });
       clientRef.current?.send({
         type: 'erd:column:edit',
         canvasId,
@@ -147,7 +145,6 @@ export function useCanvasWs(url: string, selectedCanvasId: string | null): Canva
   );
 
   const removeColumn = useCallback((canvasId: string, tableId: string, columnId: string) => {
-    console.debug('[ws] send erd:column:remove', { canvasId, tableId, columnId });
     clientRef.current?.send({ type: 'erd:column:remove', canvasId, tableId, columnId });
   }, []);
 

@@ -141,7 +141,6 @@ export function App() {
   const handleRename = useCallback(
     (tableId: string, newName: string) => {
       const currentCanvas = canvasRef.current;
-      console.debug('[App] handleRename', { tableId, newName, canvasId: currentCanvas?.id });
       if (currentCanvas?.id) {
         renameTable(currentCanvas.id, tableId, newName);
       }
@@ -152,7 +151,6 @@ export function App() {
   const handleRemove = useCallback(
     (tableId: string) => {
       const currentCanvas = canvasRef.current;
-      console.debug('[App] handleRemove', { tableId, canvasId: currentCanvas?.id });
       if (currentCanvas?.id) {
         removeTable(currentCanvas.id, tableId);
       }
@@ -163,7 +161,6 @@ export function App() {
   const handleAddColumn = useCallback(
     (tableId: string, name: string, colType: SqlType) => {
       const currentCanvas = canvasRef.current;
-      console.debug('[App] handleAddColumn', { tableId, name, colType, canvasId: currentCanvas?.id });
       if (currentCanvas?.id) {
         addColumn(currentCanvas.id, tableId, name, colType);
       }
@@ -174,7 +171,6 @@ export function App() {
   const handleRenameColumn = useCallback(
     (tableId: string, columnId: string, newName: string) => {
       const currentCanvas = canvasRef.current;
-      console.debug('[App] handleRenameColumn', { tableId, columnId, newName, canvasId: currentCanvas?.id });
       if (currentCanvas?.id) {
         renameColumn(currentCanvas.id, tableId, columnId, newName);
       }
