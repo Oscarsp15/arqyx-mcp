@@ -29,10 +29,10 @@ export function ConfirmDialog({
   }, []);
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 m-0 flex h-full w-full max-w-none items-center justify-center bg-black/50 p-0"
     >
       <div className="nodrag nowheel mx-4 w-full max-w-sm rounded-lg border border-border bg-background p-5 shadow-xl">
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -63,6 +63,6 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
