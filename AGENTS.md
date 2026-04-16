@@ -1212,7 +1212,40 @@ sin mapear. Esta regla los habría prevenido.
 
 ---
 
-Estas subsecciones (§22.1-22.6) son la base del design system.
+### 22.7 Prohibición de primitivas nativas del navegador
+
+- **Prohibido `window.alert()`, `window.confirm()`, `window.prompt()`** en
+  cualquier componente de producción. Son visualmente inconsistentes con el
+  design system, no se pueden estilar, y dan aspecto de aplicación legacy.
+- **Reemplazo obligatorio**: componente `ConfirmDialog` (o equivalente) con:
+  - Overlay semi-transparente (`bg-black/50`).
+  - Caja centrada con título, mensaje y botones "Cancelar" / "Confirmar".
+  - Botón destructivo en rojo (`bg-red-600` o `text-red-500`).
+  - Soporte de tema claro y oscuro (§22.2).
+  - `Escape` para cancelar, foco automático en el botón seguro.
+- **Prohibido `<select>` nativo sin estilar**. Los `<option>` de un `<select>`
+  nativo no respetan temas oscuros en la mayoría de navegadores (fondo blanco
+  forzado por el OS). Alternativas aceptables:
+  - `<select>` con clases explícitas de Tailwind en el propio elemento
+    (`bg-background text-foreground border-border`) **si** el resultado
+    visual es aceptable en ambos temas tras verificar en navegador.
+  - Componente custom dropdown (listbox) con `<button>` + `<ul>` posicionado
+    absolutamente, completamente estilizable.
+- **Regla general**: si un elemento HTML nativo no respeta el tema oscuro
+  del design system tras inspección visual, debe reemplazarse por un
+  componente custom estilizado con los tokens de §22.1.
+
+### 22.8 Consistencia de interacciones destructivas
+
+- Toda acción destructiva (eliminar tabla, eliminar columna, eliminar canvas,
+  etc.) debe usar el **mismo componente de confirmación** en toda la app.
+- El componente de confirmación debe ser reutilizable y aceptar al menos:
+  `title`, `message`, `onConfirm`, `onCancel`, `confirmLabel` (default
+  "Eliminar"), `variant` (default "destructive" → botón rojo).
+- Esto evita que cada agente implemente su propia versión de diálogo de
+  confirmación con estilos distintos.
+
+Estas subsecciones (§22.1-22.8) son la base del design system.
 Las siguientes (tipografía escalonada, espaciado, responsive, animaciones,
 semántica HTML) se añadirán cuando empiecen a doler. YAGNI (§12).
 

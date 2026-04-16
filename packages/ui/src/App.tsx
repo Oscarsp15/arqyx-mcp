@@ -1,4 +1,4 @@
-import type { Canvas } from '@arqyx/shared';
+import type { Canvas, SqlType } from '@arqyx/shared';
 import {
   Background,
   Controls,
@@ -36,6 +36,10 @@ export type CanvasHandlers = {
   erd?: {
     onRename?: (tableId: string, newName: string) => void;
     onRemove?: (tableId: string) => void;
+    onAddColumn?: (tableId: string, name: string, colType: SqlType) => void;
+    onRenameColumn?: (tableId: string, columnId: string, newName: string) => void;
+    onEditColumn?: (tableId: string, columnId: string, patch: { colType?: SqlType }) => void;
+    onRemoveColumn?: (tableId: string, columnId: string) => void;
   };
 };
 
@@ -75,7 +79,18 @@ function canvasKindLabel(canvas: Canvas | null): string {
 }
 
 export function App() {
-  const { canvas, status, moveNode, addTable, renameTable, removeTable } = useCanvasWs(WS_URL);
+  const {
+    canvas,
+    status,
+    moveNode,
+    addTable,
+    renameTable,
+    removeTable,
+    addColumn,
+    renameColumn,
+    editColumn,
+    removeColumn,
+  } = useCanvasWs(WS_URL);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
@@ -104,11 +119,55 @@ export function App() {
     [removeTable],
   );
 
+  const handleAddColumn = useCallback(
+    (tableId: string, name: string, colType: SqlType) => {
+      const currentCanvas = canvasRef.current;
+      if (currentCanvas?.id) {
+        addColumn(currentCanvas.id, tableId, name, colType);
+      }
+    },
+    [addColumn],
+  );
+
+  const handleRenameColumn = useCallback(
+    (tableId: string, columnId: string, newName: string) => {
+      const currentCanvas = canvasRef.current;
+      if (currentCanvas?.id) {
+        renameColumn(currentCanvas.id, tableId, columnId, newName);
+      }
+    },
+    [renameColumn],
+  );
+
+  const handleEditColumn = useCallback(
+    (tableId: string, columnId: string, patch: { colType?: SqlType }) => {
+      const currentCanvas = canvasRef.current;
+      if (currentCanvas?.id) {
+        editColumn(currentCanvas.id, tableId, columnId, patch);
+      }
+    },
+    [editColumn],
+  );
+
+  const handleRemoveColumn = useCallback(
+    (tableId: string, columnId: string) => {
+      const currentCanvas = canvasRef.current;
+      if (currentCanvas?.id) {
+        removeColumn(currentCanvas.id, tableId, columnId);
+      }
+    },
+    [removeColumn],
+  );
+
   useEffect(() => {
     const graph = canvasToGraph(canvas, {
       erd: {
         onRename: handleRename,
         onRemove: handleRemove,
+        onAddColumn: handleAddColumn,
+        onRenameColumn: handleRenameColumn,
+        onEditColumn: handleEditColumn,
+        onRemoveColumn: handleRemoveColumn,
       },
     });
 
@@ -118,7 +177,17 @@ export function App() {
 
     // Reconciliación de aristas para evitar parpadeos y re-renders innecesarios.
     setEdges((eds) => reconcileEdges(eds, graph.edges));
-  }, [canvas, setNodes, setEdges, handleRename, handleRemove]);
+  }, [
+    canvas,
+    setNodes,
+    setEdges,
+    handleRename,
+    handleRemove,
+    handleAddColumn,
+    handleRenameColumn,
+    handleEditColumn,
+    handleRemoveColumn,
+  ]);
 
   const handleAddTable = useCallback(() => {
     const currentCanvas = canvasRef.current;
