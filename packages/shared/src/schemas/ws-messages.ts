@@ -5,6 +5,7 @@ import { SqlType } from './erd.js';
 export const ServerToClientMessage = z.discriminatedUnion('type', [
   z.object({ type: z.literal('canvas:snapshot'), canvas: Canvas }),
   z.object({ type: z.literal('canvas:cleared') }),
+  z.object({ type: z.literal('canvas:deleted'), id: z.string().min(1) }),
 ]);
 export type ServerToClientMessage = z.infer<typeof ServerToClientMessage>;
 

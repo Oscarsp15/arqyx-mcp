@@ -13,7 +13,8 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Panel } from '@xyflow/react';
 import { Plus } from 'lucide-react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type CanvasOption, CanvasSelector } from './features/canvas-selector/canvas-selector.js';
 import { erdCanvasToEdges, erdCanvasToNodes } from './features/erd/canvas-to-nodes.js';
 import { ConnectionIndicator } from './features/erd/connection-indicator.js';
 import { reconcileEdges } from './features/erd/reconcile-edges.js';
@@ -26,6 +27,7 @@ import { ThemeProvider } from './features/theme/theme-provider.js';
 import { ThemeToggle } from './features/theme/theme-toggle.js';
 
 const WS_URL = `ws://${window.location.hostname}:7777/ws`;
+const API_URL = `http://${window.location.hostname}:7777/api/canvases`;
 
 const nodeTypes: NodeTypes = {
   table: TableNode,
@@ -78,9 +80,16 @@ function canvasKindLabel(canvas: Canvas | null): string {
   }
 }
 
+function toCanvasOption(canvas: Canvas): CanvasOption {
+  return { id: canvas.id, name: canvas.name, kind: canvas.kind };
+}
+
 export function App() {
+  const [selectedCanvasId, setSelectedCanvasId] = useState<string | null>(null);
+  const [fetchedCanvasOptions, setFetchedCanvasOptions] = useState<readonly CanvasOption[]>([]);
   const {
     canvas,
+    canvases,
     status,
     moveNode,
     addTable,
@@ -90,9 +99,55 @@ export function App() {
     renameColumn,
     editColumn,
     removeColumn,
-  } = useCanvasWs(WS_URL);
+  } = useCanvasWs(WS_URL, selectedCanvasId);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const previousCanvasIdRef = useRef<string | null>(null);
+
+  const canvasOptions = useMemo(() => {
+    if (status === 'open') {
+      return canvases.map(toCanvasOption);
+    }
+    if (fetchedCanvasOptions.length > 0) {
+      return fetchedCanvasOptions;
+    }
+    return canvases.map(toCanvasOption);
+  }, [status, canvases, fetchedCanvasOptions]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCanvases = async () => {
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          return;
+        }
+        const payload = (await response.json()) as { canvases: Canvas[] };
+        if (!isMounted) {
+          return;
+        }
+        setFetchedCanvasOptions(payload.canvases.map(toCanvasOption));
+      } catch {
+        return;
+      }
+    };
+
+    void fetchCanvases();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setSelectedCanvasId((currentCanvasId) => {
+      if (currentCanvasId && canvasOptions.some((option) => option.id === currentCanvasId)) {
+        return currentCanvasId;
+      }
+      return canvasOptions[0]?.id ?? null;
+    });
+  }, [canvasOptions]);
 
   // Ref para acceder al canvas actual desde closures sin stale values
   const canvasRef = useRef<Canvas | null>(null);
@@ -171,11 +226,17 @@ export function App() {
       },
     });
 
-    // Reconciliación por diff: mantiene nodos locales cuando no cambio nada relevante (§20.5, H4)
-    // Esto evita "ghost nodes" al preservar propiedades internas como 'measured' o 'dragging'.
-    setNodes((nds) => reconcileNodes(nds, graph.nodes));
+    const nextCanvasId = canvas?.id ?? null;
+    const switchedCanvas = previousCanvasIdRef.current !== nextCanvasId;
+    previousCanvasIdRef.current = nextCanvasId;
 
-    // Reconciliación de aristas para evitar parpadeos y re-renders innecesarios.
+    if (switchedCanvas || canvas === null) {
+      setNodes(graph.nodes);
+      setEdges(graph.edges);
+      return;
+    }
+
+    setNodes((nds) => reconcileNodes(nds, graph.nodes));
     setEdges((eds) => reconcileEdges(eds, graph.edges));
   }, [
     canvas,
@@ -209,13 +270,18 @@ export function App() {
         <header className="flex h-12 items-center justify-between border-border border-b px-4">
           <h1 className="font-medium text-sm">Arqyx</h1>
           <div className="flex items-center gap-4">
-            <span className="text-muted-foreground text-xs">{canvasKindLabel(canvas)}</span>
+            <CanvasSelector
+              canvases={canvasOptions}
+              selectedCanvasId={selectedCanvasId}
+              onSelect={setSelectedCanvasId}
+            />
             <ConnectionIndicator status={status} />
             <ThemeToggle />
           </div>
         </header>
         <main className="h-[calc(100vh-3rem)] w-full">
           <ReactFlow
+            key={canvas?.id ?? 'no-canvas'}
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}

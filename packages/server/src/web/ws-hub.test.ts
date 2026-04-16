@@ -31,7 +31,7 @@ describe('WsHub (WebSocket Server)', () => {
     wsHub = attachWsHub(server, store);
 
     await new Promise<void>((resolve) => {
-      server.listen(0, 'localhost', () => {
+      server.listen(0, '127.0.0.1', () => {
         port = (server.address() as AddressInfo).port;
         resolve();
       });
@@ -49,7 +49,7 @@ describe('WsHub (WebSocket Server)', () => {
   it('handles erd:table:add message', async () => {
     const canvas = store.createErdCanvas('Test Canvas');
 
-    const client = new WebSocket(`ws://localhost:${port}/ws`);
+    const client = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     clients.push(client);
     await new Promise<void>((resolve) => client.on('open', resolve));
 
@@ -80,7 +80,7 @@ describe('WsHub (WebSocket Server)', () => {
     const updatedCanvas1 = store.get(canvas.id);
     const tableId = updatedCanvas1?.kind === 'erd' ? updatedCanvas1.tables[0]?.id : '';
 
-    const client = new WebSocket(`ws://localhost:${port}/ws`);
+    const client = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     clients.push(client);
     await new Promise<void>((resolve) => client.on('open', resolve));
 
@@ -106,7 +106,7 @@ describe('WsHub (WebSocket Server)', () => {
     const updatedCanvas1 = store.get(canvas.id);
     const tableId = updatedCanvas1?.kind === 'erd' ? updatedCanvas1.tables[0]?.id : '';
 
-    const client = new WebSocket(`ws://localhost:${port}/ws`);
+    const client = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     clients.push(client);
     await new Promise<void>((resolve) => client.on('open', resolve));
 
@@ -131,7 +131,7 @@ describe('WsHub (WebSocket Server)', () => {
     const canvasWithTable = store.get(canvas.id);
     const tableId = canvasWithTable?.kind === 'erd' ? canvasWithTable.tables[0]?.id : '';
 
-    const client = new WebSocket(`ws://localhost:${port}/ws`);
+    const client = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     clients.push(client);
     await new Promise<void>((resolve) => client.on('open', resolve));
 
@@ -172,7 +172,7 @@ describe('WsHub (WebSocket Server)', () => {
     const canvasWithCol = store.get(canvas.id);
     const columnId = canvasWithCol?.kind === 'erd' ? canvasWithCol.tables[0]?.columns[0]?.id : '';
 
-    const client = new WebSocket(`ws://localhost:${port}/ws`);
+    const client = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     clients.push(client);
     await new Promise<void>((resolve) => client.on('open', resolve));
 
@@ -208,7 +208,7 @@ describe('WsHub (WebSocket Server)', () => {
     const canvasWithCol = store.get(canvas.id);
     const columnId = canvasWithCol?.kind === 'erd' ? canvasWithCol.tables[0]?.columns[0]?.id : '';
 
-    const client = new WebSocket(`ws://localhost:${port}/ws`);
+    const client = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     clients.push(client);
     await new Promise<void>((resolve) => client.on('open', resolve));
 
@@ -246,7 +246,7 @@ describe('WsHub (WebSocket Server)', () => {
     const canvasWithCol = store.get(canvas.id);
     const columnId = canvasWithCol?.kind === 'erd' ? canvasWithCol.tables[0]?.columns[0]?.id : '';
 
-    const client = new WebSocket(`ws://localhost:${port}/ws`);
+    const client = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     clients.push(client);
     await new Promise<void>((resolve) => client.on('open', resolve));
 
@@ -259,5 +259,25 @@ describe('WsHub (WebSocket Server)', () => {
     if (updated?.kind === 'erd') {
       expect(updated.tables[0]?.columns).toHaveLength(0);
     }
+  it('broadcasts canvas:deleted when a canvas is removed', async () => {
+    const canvas = store.createErdCanvas('Delete me');
+    const client = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    clients.push(client);
+    await new Promise<void>((resolve) => client.on('open', resolve));
+
+    const deletedMessagePromise = new Promise<string>((resolve) => {
+      client.on('message', (message) => {
+        const text = message.toString();
+        if (text.includes('"type":"canvas:deleted"')) {
+          resolve(text);
+        }
+      });
+    });
+
+    store.delete(canvas.id);
+
+    const deletedMessage = await deletedMessagePromise;
+    expect(deletedMessage).toContain('"type":"canvas:deleted"');
+    expect(deletedMessage).toContain(`"id":"${canvas.id}"`);
   });
 });
