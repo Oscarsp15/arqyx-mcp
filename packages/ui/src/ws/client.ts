@@ -5,6 +5,8 @@ export type ConnectionStatus = 'connecting' | 'open' | 'closed';
 
 export type CanvasWsHandlers = {
   onSnapshot: (canvas: Canvas) => void;
+  onCanvasDeleted: (canvasId: string) => void;
+  onCanvasCleared: () => void;
   onStatusChange: (status: ConnectionStatus) => void;
 };
 
@@ -27,6 +29,14 @@ export function connectCanvasWs(url: string, handlers: CanvasWsHandlers): Canvas
     if (message === null) return;
     if (message.type === 'canvas:snapshot') {
       handlers.onSnapshot(message.canvas);
+      return;
+    }
+    if (message.type === 'canvas:deleted') {
+      handlers.onCanvasDeleted(message.id);
+      return;
+    }
+    if (message.type === 'canvas:cleared') {
+      handlers.onCanvasCleared();
     }
   });
 

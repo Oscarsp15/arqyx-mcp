@@ -1,5 +1,5 @@
 import type { Canvas, SqlType } from '@arqyx/shared';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type CanvasWsClient, type ConnectionStatus, connectCanvasWs } from '../../ws/client.js';
 
 export type MoveNodeFn = (
@@ -16,6 +16,7 @@ export type ColumnFlags = {
 
 export type CanvasWsState = {
   canvas: Canvas | null;
+  canvases: readonly Canvas[];
   status: ConnectionStatus;
   moveNode: MoveNodeFn;
   addTable: (canvasId: string, name: string, position: { x: number; y: number }) => void;
@@ -38,14 +39,38 @@ export type CanvasWsState = {
   removeColumn: (canvasId: string, tableId: string, columnId: string) => void;
 };
 
-export function useCanvasWs(url: string): CanvasWsState {
-  const [canvas, setCanvas] = useState<Canvas | null>(null);
+function upsertCanvas(existingCanvases: readonly Canvas[], nextCanvas: Canvas): readonly Canvas[] {
+  const existingIndex = existingCanvases.findIndex((canvas) => canvas.id === nextCanvas.id);
+  if (existingIndex === -1) {
+    return [...existingCanvases, nextCanvas];
+  }
+  const nextCanvases = [...existingCanvases];
+  nextCanvases[existingIndex] = nextCanvas;
+  return nextCanvases;
+}
+
+export function useCanvasWs(url: string, selectedCanvasId: string | null): CanvasWsState {
+  const [canvases, setCanvases] = useState<readonly Canvas[]>([]);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const clientRef = useRef<CanvasWsClient | null>(null);
+  const canvas = useMemo(
+    () => canvases.find((nextCanvas) => nextCanvas.id === selectedCanvasId) ?? null,
+    [canvases, selectedCanvasId],
+  );
 
   useEffect(() => {
     const client = connectCanvasWs(url, {
-      onSnapshot: setCanvas,
+      onSnapshot: (nextCanvas) => {
+        setCanvases((currentCanvases) => upsertCanvas(currentCanvases, nextCanvas));
+      },
+      onCanvasDeleted: (canvasId) => {
+        setCanvases((currentCanvases) =>
+          currentCanvases.filter((currentCanvas) => currentCanvas.id !== canvasId),
+        );
+      },
+      onCanvasCleared: () => {
+        setCanvases([]);
+      },
       onStatusChange: setStatus,
     });
     clientRef.current = client;
@@ -124,6 +149,7 @@ export function useCanvasWs(url: string): CanvasWsState {
 
   return {
     canvas,
+    canvases,
     status,
     moveNode,
     addTable,

@@ -34,4 +34,10 @@ describe('parseServerMessage', () => {
     const result = parseServerMessage('{"type":"canvas:cleared"}');
     expect(result?.type).toBe('canvas:cleared');
   });
+
+  it('parses a valid canvas:deleted message', () => {
+    const result = parseServerMessage('{"type":"canvas:deleted","id":"canvas-1"}');
+    expect(result?.type).toBe('canvas:deleted');
+    expect(result?.type === 'canvas:deleted' && result.id).toBe('canvas-1');
+  });
 });

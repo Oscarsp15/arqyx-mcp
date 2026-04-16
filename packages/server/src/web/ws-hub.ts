@@ -34,6 +34,10 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
   const unsubscribe = store.on((event) => {
     if (event.type === 'canvas:created' || event.type === 'canvas:updated') {
       broadcast({ type: 'canvas:snapshot', canvas: event.canvas });
+      return;
+    }
+    if (event.type === 'canvas:deleted') {
+      broadcast({ type: 'canvas:deleted', id: event.id });
     }
   });
 
