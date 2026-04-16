@@ -142,18 +142,40 @@ export function App() {
         }
 
         if (labelChanged || posChanged || specificChanged) {
-          // Fusionamos: el servidor manda en data y position, pero mantenemos el resto (measured, etc.)
+          // Fusionamos: el servidor manda en data y position...
+          // EXCEPCIÓN: Si el nodo se está arrastrando localmente, ignoramos la posición del servidor
+          // para evitar el efecto de "retroceso" (jitter) por latencia.
           return {
             ...localNode,
             data: serverNode.data,
-            position: serverNode.position,
+            position: localNode.dragging ? localNode.position : serverNode.position,
           };
         }
         return localNode;
       });
     });
 
-    setEdges(graph.edges);
+    // Sincronización inteligente de aristas (edges)
+    setEdges((eds) => {
+      const serverEdges = graph.edges;
+
+      // Si el número de aristas cambió, reemplazo total
+      if (eds.length !== serverEdges.length) return serverEdges;
+
+      return serverEdges.map((serverEdge) => {
+        const localEdge = eds.find((e) => e.id === serverEdge.id);
+        if (!localEdge) return serverEdge;
+
+        // Comparamos propiedades básicas para decidir si actualizar la referencia
+        const changed =
+          localEdge.source !== serverEdge.source ||
+          localEdge.target !== serverEdge.target ||
+          localEdge.label !== serverEdge.label ||
+          localEdge.animated !== serverEdge.animated;
+
+        return changed ? serverEdge : localEdge;
+      });
+    });
   }, [canvas, setNodes, setEdges, handleRename, handleRemove]);
 
   const handleAddTable = useCallback(() => {
