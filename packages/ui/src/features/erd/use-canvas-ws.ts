@@ -101,6 +101,7 @@ export function useCanvasWs(url: string, selectedCanvasId: string | null): Canva
 
   const addColumn = useCallback(
     (canvasId: string, tableId: string, name: string, colType: SqlType, flags?: ColumnFlags) => {
+      console.debug('[ws] send erd:column:add', { canvasId, tableId, name, colType });
       clientRef.current?.send({
         type: 'erd:column:add',
         canvasId,
@@ -117,6 +118,7 @@ export function useCanvasWs(url: string, selectedCanvasId: string | null): Canva
 
   const renameColumn = useCallback(
     (canvasId: string, tableId: string, columnId: string, newName: string) => {
+      console.debug('[ws] send erd:column:rename', { canvasId, tableId, columnId, newName });
       clientRef.current?.send({ type: 'erd:column:rename', canvasId, tableId, columnId, newName });
     },
     [],
@@ -129,6 +131,7 @@ export function useCanvasWs(url: string, selectedCanvasId: string | null): Canva
       columnId: string,
       patch: { colType?: SqlType } & ColumnFlags,
     ) => {
+      console.debug('[ws] send erd:column:edit', { canvasId, tableId, columnId, patch });
       clientRef.current?.send({
         type: 'erd:column:edit',
         canvasId,
@@ -144,20 +147,36 @@ export function useCanvasWs(url: string, selectedCanvasId: string | null): Canva
   );
 
   const removeColumn = useCallback((canvasId: string, tableId: string, columnId: string) => {
+    console.debug('[ws] send erd:column:remove', { canvasId, tableId, columnId });
     clientRef.current?.send({ type: 'erd:column:remove', canvasId, tableId, columnId });
   }, []);
 
-  return {
-    canvas,
-    canvases,
-    status,
-    moveNode,
-    addTable,
-    renameTable,
-    removeTable,
-    addColumn,
-    renameColumn,
-    editColumn,
-    removeColumn,
-  };
+  return useMemo(
+    () => ({
+      canvas,
+      canvases,
+      status,
+      moveNode,
+      addTable,
+      renameTable,
+      removeTable,
+      addColumn,
+      renameColumn,
+      editColumn,
+      removeColumn,
+    }),
+    [
+      canvas,
+      canvases,
+      status,
+      moveNode,
+      addTable,
+      renameTable,
+      removeTable,
+      addColumn,
+      renameColumn,
+      editColumn,
+      removeColumn,
+    ],
+  );
 }

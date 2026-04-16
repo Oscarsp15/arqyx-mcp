@@ -8,5 +8,8 @@ export function parseServerMessage(raw: string): ServerToClientMessage | null {
     return null;
   }
   const result = ServerToClientMessage.safeParse(json);
+  if (!result.success) {
+    console.warn('[ws] failed to parse server message', result.error.issues, json);
+  }
   return result.success ? result.data : null;
 }

@@ -88,7 +88,7 @@ export function TableNode({ data }: NodeProps) {
             <button
               type="button"
               // color semáforo: acción destructiva
-              className="ml-2 cursor-pointer text-muted-foreground hover:text-red-500"
+              className="nodrag nowheel ml-2 cursor-pointer text-muted-foreground hover:text-red-500"
               onClick={() => setConfirmRemoveTable(true)}
             >
               <X className="h-4 w-4" />
@@ -114,7 +114,7 @@ export function TableNode({ data }: NodeProps) {
           <div className="border-t border-border px-3 py-1.5">
             <button
               type="button"
-              className="nodrag flex cursor-pointer items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              className="nodrag nowheel flex cursor-pointer items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
               onClick={handleAddColumn}
             >
               <Plus className="h-3 w-3" />

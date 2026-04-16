@@ -49,6 +49,7 @@ export function ColumnRow({
       <li className="group flex items-center justify-between gap-2 px-3 py-1.5 text-xs">
         <span className="flex min-w-0 flex-1 items-center gap-1.5 font-medium text-foreground">
           {column.isPrimaryKey ? (
+            // color semáforo: clave primaria
             <Key aria-label="Clave primaria" className="h-3 w-3 shrink-0 text-amber-500" />
           ) : null}
           {isEditingName ? (
@@ -88,7 +89,7 @@ export function ColumnRow({
         <div className="flex shrink-0 items-center gap-1">
           {onEditColumn ? (
             <select
-              className="nodrag nowheel cursor-pointer rounded border border-border bg-background px-1 py-0.5 text-xs text-muted-foreground outline-none hover:text-foreground"
+              className="nodrag nowheel cursor-pointer rounded border border-input bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground outline-none transition-colors hover:border-accent-foreground hover:text-foreground focus:ring-1 focus:ring-ring"
               value={column.type}
               onChange={(e) => onEditColumn(column.id, { colType: e.target.value as SqlType })}
             >
@@ -105,7 +106,7 @@ export function ColumnRow({
             <button
               type="button"
               // color semáforo: acción destructiva
-              className="nodrag cursor-pointer text-muted-foreground opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
+              className="nodrag nowheel cursor-pointer text-muted-foreground opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
               onClick={() => setConfirmRemove(true)}
             >
               <X className="h-3 w-3" />
