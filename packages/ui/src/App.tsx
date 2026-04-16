@@ -16,6 +16,8 @@ import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useRef } from 'react';
 import { erdCanvasToEdges, erdCanvasToNodes } from './features/erd/canvas-to-nodes.js';
 import { ConnectionIndicator } from './features/erd/connection-indicator.js';
+import { reconcileEdges } from './features/erd/reconcile-edges.js';
+import { reconcileNodes } from './features/erd/reconcile-nodes.js';
 import { TableNode } from './features/erd/table-node.js';
 import { useCanvasWs } from './features/erd/use-canvas-ws.js';
 import { flowCanvasToEdges, flowCanvasToNodes } from './features/flow/canvas-to-nodes.js';
@@ -109,8 +111,13 @@ export function App() {
         onRemove: handleRemove,
       },
     });
-    setNodes(graph.nodes);
-    setEdges(graph.edges);
+
+    // Reconciliación por diff: mantiene nodos locales cuando no cambio nada relevante (§20.5, H4)
+    // Esto evita "ghost nodes" al preservar propiedades internas como 'measured' o 'dragging'.
+    setNodes((nds) => reconcileNodes(nds, graph.nodes));
+
+    // Reconciliación de aristas para evitar parpadeos y re-renders innecesarios.
+    setEdges((eds) => reconcileEdges(eds, graph.edges));
   }, [canvas, setNodes, setEdges, handleRename, handleRemove]);
 
   const handleAddTable = useCallback(() => {
