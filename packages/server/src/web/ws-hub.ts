@@ -133,10 +133,7 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
         }
       } catch (error) {
         if (error instanceof DomainError) {
-          logger.warn(
-            { code: error.code, message: error.message, data: (error as any).data },
-            'domain error on ws message',
-          );
+          logger.warn({ code: error.code, message: error.message }, 'domain error on ws message');
           return;
         }
         if (error instanceof SyntaxError) {
