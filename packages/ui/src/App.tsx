@@ -119,14 +119,30 @@ export function App() {
         const localNode = nds.find((n) => n.id === serverNode.id);
         if (!localNode) return serverNode;
 
-        // Comparamos propiedades críticas para evitar re-renders innecesarios y JSON.stringify ineficiente.
-        const dataChanged = localNode.data.label !== serverNode.data.label;
+        // Comparamos propiedades para detectar cambios reales del servidor
+        const dataA = localNode.data as Record<string, unknown>;
+        const dataB = serverNode.data as Record<string, unknown>;
+
+        const labelChanged = dataA['label'] !== dataB['label'];
         const posChanged =
           localNode.position.x !== serverNode.position.x ||
           localNode.position.y !== serverNode.position.y;
 
-        if (dataChanged || posChanged) {
-          // Fusionamos: el servidor manda en data y position, pero mantenemos el resto
+        // Detección de cambios específicos por tipo de nodo
+        let specificChanged = false;
+        if (serverNode.type === 'table') {
+          // Para tablas ERD, comparamos las columnas
+          specificChanged = JSON.stringify(dataA['columns']) !== JSON.stringify(dataB['columns']);
+        } else if (serverNode.type === 'flow') {
+          // Para nodos Flow, comparamos forma, color y descripción
+          specificChanged =
+            dataA['shape'] !== dataB['shape'] ||
+            dataA['color'] !== dataB['color'] ||
+            dataA['description'] !== dataB['description'];
+        }
+
+        if (labelChanged || posChanged || specificChanged) {
+          // Fusionamos: el servidor manda en data y position, pero mantenemos el resto (measured, etc.)
           return {
             ...localNode,
             data: serverNode.data,
