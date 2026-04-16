@@ -56,6 +56,7 @@ export function ConfirmDialog({
           </button>
           <button
             type="button"
+            // color semáforo: acción destructiva
             className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 transition-colors"
             onClick={onConfirm}
           >
