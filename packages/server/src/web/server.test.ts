@@ -34,9 +34,10 @@ describe('startWebServer', () => {
     });
 
     const response = await fetch(`${webServer.url}/api/health`);
-    const payload = (await response.json()) as { uptime: number; version: string };
+    const payload = (await response.json()) as { ok: boolean; uptime: number; version: string };
 
     expect(response.status).toBe(200);
+    expect(payload.ok).toBe(true);
     expect(payload.version).toBe(packageJson.version);
     expect(payload.uptime).toBeGreaterThanOrEqual(0);
   });

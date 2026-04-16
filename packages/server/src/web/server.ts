@@ -20,6 +20,7 @@ export async function startWebServer(deps: StartWebServerDeps): Promise<WebServe
 
   app.get('/healthz', async () => ({ ok: true }));
   app.get('/api/health', async () => ({
+    ok: true,
     uptime: process.uptime(),
     version: packageJson.version,
   }));
