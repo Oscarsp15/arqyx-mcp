@@ -24,7 +24,12 @@ export type ColumnRowProps = {
   onRemoveColumn?: (columnId: string) => void;
 };
 
-export function ColumnRow({ column, onRenameColumn, onEditColumn, onRemoveColumn }: ColumnRowProps) {
+export function ColumnRow({
+  column,
+  onRenameColumn,
+  onEditColumn,
+  onRemoveColumn,
+}: ColumnRowProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(column.name);
   const [confirmRemove, setConfirmRemove] = useState(false);
