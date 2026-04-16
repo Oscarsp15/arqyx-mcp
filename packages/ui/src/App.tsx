@@ -110,7 +110,7 @@ export function App() {
       },
     });
 
-    // Sincronización inteligente: mezclamos data y position conservando las 
+    // Sincronización inteligente: mezclamos data y position conservando las
     // propiedades internas de React Flow (measured, dragging, etc.) para evitar "ghost nodes".
     setNodes((nds) => {
       const serverNodes = graph.nodes;
@@ -119,7 +119,8 @@ export function App() {
         const localNode = nds.find((n) => n.id === serverNode.id);
         if (!localNode) return serverNode;
 
-        const dataChanged = JSON.stringify(localNode.data) !== JSON.stringify(serverNode.data);
+        // Comparamos propiedades críticas para evitar re-renders innecesarios y JSON.stringify ineficiente.
+        const dataChanged = localNode.data.label !== serverNode.data.label;
         const posChanged =
           localNode.position.x !== serverNode.position.x ||
           localNode.position.y !== serverNode.position.y;

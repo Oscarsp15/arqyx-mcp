@@ -1,6 +1,6 @@
 import { Handle, type NodeProps, Position } from '@xyflow/react';
 import { Key, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export type TableColumnView = {
   id: string;
@@ -22,14 +22,6 @@ export function TableNode({ data }: NodeProps) {
   const typed = data as TableNodeData;
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(typed.label);
-
-  // Sincronizar el valor de edición si cambia el label desde el servidor
-  // y no estamos editándolo localmente.
-  useEffect(() => {
-    if (!isEditing) {
-      setEditValue(typed.label);
-    }
-  }, [typed.label, isEditing]);
 
   const handleEditSubmit = () => {
     setIsEditing(false);
