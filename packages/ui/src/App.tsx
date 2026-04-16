@@ -16,6 +16,8 @@ import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useRef } from 'react';
 import { erdCanvasToEdges, erdCanvasToNodes } from './features/erd/canvas-to-nodes.js';
 import { ConnectionIndicator } from './features/erd/connection-indicator.js';
+import { reconcileEdges } from './features/erd/reconcile-edges.js';
+import { reconcileNodes } from './features/erd/reconcile-nodes.js';
 import { TableNode } from './features/erd/table-node.js';
 import { useCanvasWs } from './features/erd/use-canvas-ws.js';
 import { flowCanvasToEdges, flowCanvasToNodes } from './features/flow/canvas-to-nodes.js';
@@ -110,72 +112,12 @@ export function App() {
       },
     });
 
-    // Sincronización inteligente: mezclamos data y position conservando las
-    // propiedades internas de React Flow (measured, dragging, etc.) para evitar "ghost nodes".
-    setNodes((nds) => {
-      const serverNodes = graph.nodes;
+    // Reconciliación por diff: mantiene nodos locales cuando no cambio nada relevante (§20.5, H4)
+    // Esto evita "ghost nodes" al preservar propiedades internas como 'measured' o 'dragging'.
+    setNodes((nds) => reconcileNodes(nds, graph.nodes));
 
-      return serverNodes.map((serverNode) => {
-        const localNode = nds.find((n) => n.id === serverNode.id);
-        if (!localNode) return serverNode;
-
-        // Comparamos propiedades para detectar cambios reales del servidor
-        const dataA = localNode.data as Record<string, unknown>;
-        const dataB = serverNode.data as Record<string, unknown>;
-
-        const labelChanged = dataA['label'] !== dataB['label'];
-        const posChanged =
-          localNode.position.x !== serverNode.position.x ||
-          localNode.position.y !== serverNode.position.y;
-
-        // Detección de cambios específicos por tipo de nodo
-        let specificChanged = false;
-        if (serverNode.type === 'table') {
-          // Para tablas ERD, comparamos las columnas
-          specificChanged = JSON.stringify(dataA['columns']) !== JSON.stringify(dataB['columns']);
-        } else if (serverNode.type === 'flow') {
-          // Para nodos Flow, comparamos forma, color y descripción
-          specificChanged =
-            dataA['shape'] !== dataB['shape'] ||
-            dataA['color'] !== dataB['color'] ||
-            dataA['description'] !== dataB['description'];
-        }
-
-        if (labelChanged || posChanged || specificChanged) {
-          // Fusionamos: el servidor manda en data y position...
-          // EXCEPCIÓN: Si el nodo se está arrastrando localmente, ignoramos la posición del servidor
-          // para evitar el efecto de "retroceso" (jitter) por latencia.
-          return {
-            ...localNode,
-            data: serverNode.data,
-            position: localNode.dragging ? localNode.position : serverNode.position,
-          };
-        }
-        return localNode;
-      });
-    });
-
-    // Sincronización inteligente de aristas (edges)
-    setEdges((eds) => {
-      const serverEdges = graph.edges;
-
-      // Si el número de aristas cambió, reemplazo total
-      if (eds.length !== serverEdges.length) return serverEdges;
-
-      return serverEdges.map((serverEdge) => {
-        const localEdge = eds.find((e) => e.id === serverEdge.id);
-        if (!localEdge) return serverEdge;
-
-        // Comparamos propiedades básicas para decidir si actualizar la referencia
-        const changed =
-          localEdge.source !== serverEdge.source ||
-          localEdge.target !== serverEdge.target ||
-          localEdge.label !== serverEdge.label ||
-          localEdge.animated !== serverEdge.animated;
-
-        return changed ? serverEdge : localEdge;
-      });
-    });
+    // Reconciliación de aristas para evitar parpadeos y re-renders innecesarios.
+    setEdges((eds) => reconcileEdges(eds, graph.edges));
   }, [canvas, setNodes, setEdges, handleRename, handleRemove]);
 
   const handleAddTable = useCallback(() => {
