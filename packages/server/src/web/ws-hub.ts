@@ -2,6 +2,7 @@ import type { Server as HttpServer } from 'node:http';
 import {
   type CanvasId,
   ClientToServerMessage,
+  type ColumnId,
   DomainError,
   type FlowNodeId,
   type ServerToClientMessage,
@@ -9,6 +10,7 @@ import {
 } from '@arqyx/shared';
 import pino from 'pino';
 import { WebSocket, WebSocketServer } from 'ws';
+import type { ColumnPatch } from '../state/erd-operations.js';
 import type { CanvasStore } from '../state/store.js';
 
 const logger = pino({ name: 'ws-hub' });
@@ -71,6 +73,50 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
         }
         if (parsed.data.type === 'erd:table:remove') {
           store.removeTable(parsed.data.canvasId as CanvasId, parsed.data.tableId as TableId);
+          return;
+        }
+        if (parsed.data.type === 'erd:column:add') {
+          store.addColumn(parsed.data.canvasId as CanvasId, parsed.data.tableId as TableId, {
+            name: parsed.data.name,
+            type: parsed.data.colType,
+            isPrimaryKey: parsed.data.isPrimaryKey,
+            isNullable: parsed.data.isNullable,
+            isUnique: parsed.data.isUnique,
+          });
+          return;
+        }
+        if (parsed.data.type === 'erd:column:rename') {
+          store.renameColumn(
+            parsed.data.canvasId as CanvasId,
+            parsed.data.tableId as TableId,
+            parsed.data.columnId as ColumnId,
+            parsed.data.newName,
+          );
+          return;
+        }
+        if (parsed.data.type === 'erd:column:edit') {
+          const patch: ColumnPatch = {
+            ...(parsed.data.colType !== undefined ? { type: parsed.data.colType } : {}),
+            ...(parsed.data.isPrimaryKey !== undefined
+              ? { isPrimaryKey: parsed.data.isPrimaryKey }
+              : {}),
+            ...(parsed.data.isNullable !== undefined ? { isNullable: parsed.data.isNullable } : {}),
+            ...(parsed.data.isUnique !== undefined ? { isUnique: parsed.data.isUnique } : {}),
+          };
+          store.editColumn(
+            parsed.data.canvasId as CanvasId,
+            parsed.data.tableId as TableId,
+            parsed.data.columnId as ColumnId,
+            patch,
+          );
+          return;
+        }
+        if (parsed.data.type === 'erd:column:remove') {
+          store.removeColumn(
+            parsed.data.canvasId as CanvasId,
+            parsed.data.tableId as TableId,
+            parsed.data.columnId as ColumnId,
+          );
           return;
         }
       } catch (error) {

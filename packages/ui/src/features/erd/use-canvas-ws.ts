@@ -1,4 +1,4 @@
-import type { Canvas } from '@arqyx/shared';
+import type { Canvas, SqlType } from '@arqyx/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type CanvasWsClient, type ConnectionStatus, connectCanvasWs } from '../../ws/client.js';
 
@@ -8,6 +8,12 @@ export type MoveNodeFn = (
   position: { x: number; y: number },
 ) => void;
 
+export type ColumnFlags = {
+  isPrimaryKey?: boolean;
+  isNullable?: boolean;
+  isUnique?: boolean;
+};
+
 export type CanvasWsState = {
   canvas: Canvas | null;
   status: ConnectionStatus;
@@ -15,6 +21,21 @@ export type CanvasWsState = {
   addTable: (canvasId: string, name: string, position: { x: number; y: number }) => void;
   renameTable: (canvasId: string, tableId: string, newName: string) => void;
   removeTable: (canvasId: string, tableId: string) => void;
+  addColumn: (
+    canvasId: string,
+    tableId: string,
+    name: string,
+    colType: SqlType,
+    flags?: ColumnFlags,
+  ) => void;
+  renameColumn: (canvasId: string, tableId: string, columnId: string, newName: string) => void;
+  editColumn: (
+    canvasId: string,
+    tableId: string,
+    columnId: string,
+    patch: { colType?: SqlType } & ColumnFlags,
+  ) => void;
+  removeColumn: (canvasId: string, tableId: string, columnId: string) => void;
 };
 
 export function useCanvasWs(url: string): CanvasWsState {
@@ -53,5 +74,64 @@ export function useCanvasWs(url: string): CanvasWsState {
     clientRef.current?.send({ type: 'erd:table:remove', canvasId, tableId });
   }, []);
 
-  return { canvas, status, moveNode, addTable, renameTable, removeTable };
+  const addColumn = useCallback(
+    (canvasId: string, tableId: string, name: string, colType: SqlType, flags?: ColumnFlags) => {
+      clientRef.current?.send({
+        type: 'erd:column:add',
+        canvasId,
+        tableId,
+        name,
+        colType,
+        isPrimaryKey: flags?.isPrimaryKey ?? false,
+        isNullable: flags?.isNullable ?? true,
+        isUnique: flags?.isUnique ?? false,
+      });
+    },
+    [],
+  );
+
+  const renameColumn = useCallback(
+    (canvasId: string, tableId: string, columnId: string, newName: string) => {
+      clientRef.current?.send({ type: 'erd:column:rename', canvasId, tableId, columnId, newName });
+    },
+    [],
+  );
+
+  const editColumn = useCallback(
+    (
+      canvasId: string,
+      tableId: string,
+      columnId: string,
+      patch: { colType?: SqlType } & ColumnFlags,
+    ) => {
+      clientRef.current?.send({
+        type: 'erd:column:edit',
+        canvasId,
+        tableId,
+        columnId,
+        colType: patch.colType,
+        isPrimaryKey: patch.isPrimaryKey,
+        isNullable: patch.isNullable,
+        isUnique: patch.isUnique,
+      });
+    },
+    [],
+  );
+
+  const removeColumn = useCallback((canvasId: string, tableId: string, columnId: string) => {
+    clientRef.current?.send({ type: 'erd:column:remove', canvasId, tableId, columnId });
+  }, []);
+
+  return {
+    canvas,
+    status,
+    moveNode,
+    addTable,
+    renameTable,
+    removeTable,
+    addColumn,
+    renameColumn,
+    editColumn,
+    removeColumn,
+  };
 }
