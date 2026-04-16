@@ -109,7 +109,33 @@ export function App() {
         onRemove: handleRemove,
       },
     });
-    setNodes(graph.nodes);
+
+    // Sincronización inteligente: reemplazamos data y position pero mantenemos
+    // la referencia del array si no hay cambios estructurales sustanciales.
+    setNodes((nds) => {
+      const serverNodes = graph.nodes;
+
+      // Si el número de nodos cambió, reemplazo total (añadir/quitar)
+      if (nds.length !== serverNodes.length) return serverNodes;
+
+      // Si no, actualizamos solo los que cambiaron data o position.
+      // Comparamos stringify de data para detectar cambios profundos en el objeto data.
+      return serverNodes.map((serverNode) => {
+        const localNode = nds.find((n) => n.id === serverNode.id);
+        if (!localNode) return serverNode;
+
+        const dataChanged = JSON.stringify(localNode.data) !== JSON.stringify(serverNode.data);
+        const posChanged =
+          localNode.position.x !== serverNode.position.x ||
+          localNode.position.y !== serverNode.position.y;
+
+        if (dataChanged || posChanged) {
+          return serverNode;
+        }
+        return localNode;
+      });
+    });
+
     setEdges(graph.edges);
   }, [canvas, setNodes, setEdges, handleRename, handleRemove]);
 

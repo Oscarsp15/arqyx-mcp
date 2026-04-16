@@ -23,6 +23,12 @@ export function TableNode({ data }: NodeProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(typed.label);
 
+  // Sincronizar el valor de edición si cambia el label desde el servidor
+  // y no estamos editandolo localmente.
+  if (!isEditing && editValue !== typed.label) {
+    setEditValue(typed.label);
+  }
+
   const handleEditSubmit = () => {
     setIsEditing(false);
     const trimmed = editValue.trim();
