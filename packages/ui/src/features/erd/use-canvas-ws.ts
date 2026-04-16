@@ -101,7 +101,6 @@ export function useCanvasWs(url: string, selectedCanvasId: string | null): Canva
 
   const addColumn = useCallback(
     (canvasId: string, tableId: string, name: string, colType: SqlType, flags?: ColumnFlags) => {
-      console.debug('[ws] send erd:column:add', { canvasId, tableId, name, colType });
       clientRef.current?.send({
         type: 'erd:column:add',
         canvasId,
