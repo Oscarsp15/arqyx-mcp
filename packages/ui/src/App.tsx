@@ -110,16 +110,11 @@ export function App() {
       },
     });
 
-    // Sincronización inteligente: reemplazamos data y position pero mantenemos
-    // la referencia del array si no hay cambios estructurales sustanciales.
+    // Sincronización inteligente: mezclamos data y position conservando las 
+    // propiedades internas de React Flow (measured, dragging, etc.) para evitar "ghost nodes".
     setNodes((nds) => {
       const serverNodes = graph.nodes;
 
-      // Si el número de nodos cambió, reemplazo total (añadir/quitar)
-      if (nds.length !== serverNodes.length) return serverNodes;
-
-      // Si no, actualizamos solo los que cambiaron data o position.
-      // Comparamos stringify de data para detectar cambios profundos en el objeto data.
       return serverNodes.map((serverNode) => {
         const localNode = nds.find((n) => n.id === serverNode.id);
         if (!localNode) return serverNode;
@@ -130,7 +125,12 @@ export function App() {
           localNode.position.y !== serverNode.position.y;
 
         if (dataChanged || posChanged) {
-          return serverNode;
+          // Fusionamos: el servidor manda en data y position, pero mantenemos el resto
+          return {
+            ...localNode,
+            data: serverNode.data,
+            position: serverNode.position,
+          };
         }
         return localNode;
       });
