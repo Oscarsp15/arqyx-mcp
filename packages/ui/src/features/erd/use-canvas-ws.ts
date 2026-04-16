@@ -1,5 +1,5 @@
 import type { Canvas } from '@arqyx/shared';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { type CanvasWsClient, type ConnectionStatus, connectCanvasWs } from '../../ws/client.js';
 
 export type MoveNodeFn = (
@@ -12,6 +12,9 @@ export type CanvasWsState = {
   canvas: Canvas | null;
   status: ConnectionStatus;
   moveNode: MoveNodeFn;
+  addTable: (canvasId: string, name: string, position: { x: number; y: number }) => void;
+  renameTable: (canvasId: string, tableId: string, newName: string) => void;
+  removeTable: (canvasId: string, tableId: string) => void;
 };
 
 export function useCanvasWs(url: string): CanvasWsState {
@@ -31,9 +34,24 @@ export function useCanvasWs(url: string): CanvasWsState {
     };
   }, [url]);
 
-  const moveNode: MoveNodeFn = (canvasId, nodeId, position) => {
+  const moveNode: MoveNodeFn = useCallback((canvasId, nodeId, position) => {
     clientRef.current?.send({ type: 'node:moved', canvasId, nodeId, position });
-  };
+  }, []);
 
-  return { canvas, status, moveNode };
+  const addTable = useCallback(
+    (canvasId: string, name: string, position: { x: number; y: number }) => {
+      clientRef.current?.send({ type: 'erd:table:add', canvasId, name, position });
+    },
+    [],
+  );
+
+  const renameTable = useCallback((canvasId: string, tableId: string, newName: string) => {
+    clientRef.current?.send({ type: 'erd:table:rename', canvasId, tableId, newName });
+  }, []);
+
+  const removeTable = useCallback((canvasId: string, tableId: string) => {
+    clientRef.current?.send({ type: 'erd:table:remove', canvasId, tableId });
+  }, []);
+
+  return { canvas, status, moveNode, addTable, renameTable, removeTable };
 }

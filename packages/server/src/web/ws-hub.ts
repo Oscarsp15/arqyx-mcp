@@ -7,8 +7,11 @@ import {
   type ServerToClientMessage,
   type TableId,
 } from '@arqyx/shared';
+import pino from 'pino';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { CanvasStore } from '../state/store.js';
+
+const logger = pino({ name: 'ws-hub' });
 
 export type WsHub = {
   close: () => Promise<void>;
@@ -43,13 +46,42 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
       try {
         const json = JSON.parse(text) as unknown;
         const parsed = ClientToServerMessage.safeParse(json);
-        if (!parsed.success) return;
+        if (!parsed.success) {
+          logger.warn({ issues: parsed.error.issues }, 'rejected malformed client message');
+          return;
+        }
         if (parsed.data.type === 'node:moved') {
           dispatchNodeMoved(store, parsed.data.canvasId, parsed.data.nodeId, parsed.data.position);
+          return;
+        }
+        if (parsed.data.type === 'erd:table:add') {
+          store.addTable(parsed.data.canvasId as CanvasId, {
+            name: parsed.data.name,
+            position: parsed.data.position,
+          });
+          return;
+        }
+        if (parsed.data.type === 'erd:table:rename') {
+          store.renameTable(
+            parsed.data.canvasId as CanvasId,
+            parsed.data.tableId as TableId,
+            parsed.data.newName,
+          );
+          return;
+        }
+        if (parsed.data.type === 'erd:table:remove') {
+          store.removeTable(parsed.data.canvasId as CanvasId, parsed.data.tableId as TableId);
+          return;
         }
       } catch (error) {
-        if (error instanceof DomainError) return;
-        if (error instanceof SyntaxError) return;
+        if (error instanceof DomainError) {
+          logger.warn({ code: error.code, message: error.message }, 'domain error on ws message');
+          return;
+        }
+        if (error instanceof SyntaxError) {
+          logger.warn({ message: error.message }, 'invalid json on ws message');
+          return;
+        }
         throw error;
       }
     });

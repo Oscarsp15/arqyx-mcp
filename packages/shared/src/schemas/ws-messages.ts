@@ -15,5 +15,30 @@ export const ClientToServerMessage = z.discriminatedUnion('type', [
     nodeId: z.string().min(1),
     position: z.object({ x: z.number(), y: z.number() }),
   }),
+  z.object({
+    type: z.literal('erd:table:add'),
+    canvasId: z.string().min(1),
+    name: z
+      .string()
+      .min(1)
+      .max(64)
+      .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/),
+    position: z.object({ x: z.number(), y: z.number() }),
+  }),
+  z.object({
+    type: z.literal('erd:table:rename'),
+    canvasId: z.string().min(1),
+    tableId: z.string().min(1),
+    newName: z
+      .string()
+      .min(1)
+      .max(64)
+      .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/),
+  }),
+  z.object({
+    type: z.literal('erd:table:remove'),
+    canvasId: z.string().min(1),
+    tableId: z.string().min(1),
+  }),
 ]);
 export type ClientToServerMessage = z.infer<typeof ClientToServerMessage>;
