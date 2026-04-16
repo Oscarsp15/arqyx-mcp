@@ -853,8 +853,12 @@ Configurar en GitHub (Settings → Branches → Add rule):
 ### 21.7 Issues
 
 - Todo trabajo > 30 minutos debería tener un issue asociado.
-- Los issues se referencian en los PRs con `Closes #N` en el cuerpo — GitHub
-  los cierra automáticamente al mergear.
+- **Obligatorio**: todo PR que resuelva un issue debe incluir `Closes #N` en
+  el cuerpo del PR (sección "Issue relacionado"). Sin esta keyword:
+  - GitHub **no cierra** el issue automáticamente al mergear.
+  - GitHub **no vincula** el PR como "linked pull request" del issue.
+  - El project board **no refleja** la relación PR↔Issue.
+  Si el PR resuelve varios issues, listar cada uno: `Closes #N, Closes #M`.
 - **Labels mínimos**:
   - `type:feat`, `type:fix`, `type:refactor`, `type:docs`, `type:chore`
   - `priority:high`, `priority:normal`, `priority:low`
@@ -933,7 +937,10 @@ con este repo:
     final del mensaje de commit cuando el agente es quien escribe.
 11. **Siempre menciona las secciones de AGENTS.md aplicadas** en el cuerpo
     del PR (sección "Secciones de AGENTS.md aplicadas").
-12. Si el humano pide una acción destructiva (force push, delete branch,
+12. **Siempre incluye `Closes #N`** en el body del PR si resuelve un issue
+    (§21.7). Sin esto el issue queda abierto, no se vincula al project
+    board y el humano tiene que cerrarlo manualmente.
+13. Si el humano pide una acción destructiva (force push, delete branch,
     rewrite history), el agente **repite la intención en voz alta** y pide
     confirmación explícita antes de ejecutar.
 
