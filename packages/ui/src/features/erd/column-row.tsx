@@ -1,6 +1,7 @@
 import type { SqlType } from '@arqyx/shared';
-import { Key, X } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronDown, Key, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ConfirmDialog } from './confirm-dialog.js';
 import type { TableColumnView } from './table-node.js';
 
@@ -16,6 +17,112 @@ const SQL_TYPES: SqlType[] = [
   'numeric',
   'json',
 ];
+
+// §22.7: dropdown custom con button + div posicionado
+type TypeSelectProps = {
+  value: SqlType;
+  onChange: (value: SqlType) => void;
+};
+
+function TypeSelect({ value, onChange }: TypeSelectProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  // null = cerrado, {top, left, width} = abierto con posición calculada
+  const [dropdown, setDropdown] = useState<{ top: number; left: number; width: number } | null>(
+    null,
+  );
+  const isOpen = dropdown !== null;
+
+  const openDropdown = () => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdown({ top: rect.bottom + 2, left: rect.left, width: rect.width });
+  };
+
+  const closeDropdown = () => setDropdown(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const close = () => setDropdown(null);
+    // Cerrar al hacer click fuera del dropdown
+    const handleMouseDown = (e: MouseEvent) => {
+      if (listRef.current && !listRef.current.contains(e.target as Node)) {
+        close();
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    // Cerrar al mover el canvas (wheel)
+    const handleWheel = () => close();
+    // Cerrar al arrastrar (drag) fuera del dropdown - detecta drag de la tabla
+    const handleDrag = (e: PointerEvent) => {
+      // Solo cierra si se está arrastrando (botón presionado) y fuera del dropdown
+      if (
+        e.buttons > 0 &&
+        listRef.current &&
+        !listRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node)
+      ) {
+        close();
+      }
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleEscape);
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    document.addEventListener('pointermove', handleDrag);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('wheel', handleWheel);
+      document.removeEventListener('pointermove', handleDrag);
+    };
+  }, [isOpen]);
+
+  const handleSelect = (type: SqlType) => {
+    onChange(type);
+    closeDropdown();
+  };
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => (isOpen ? closeDropdown() : openDropdown())}
+        className="nodrag nowheel flex w-[85px] cursor-pointer items-center justify-between rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground outline-none transition-colors hover:bg-muted focus:ring-1 focus:ring-primary"
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+      >
+        {value}
+        <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+      </button>
+      {isOpen &&
+        createPortal(
+          <div
+            ref={listRef}
+            style={{ top: dropdown.top, left: dropdown.left, width: dropdown.width }}
+            className="nodrag nowheel fixed z-50 flex flex-col rounded border border-border bg-background py-1 shadow-lg"
+          >
+            {SQL_TYPES.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => handleSelect(t)}
+                className={`cursor-pointer px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
+                  t === value ? 'bg-muted font-medium text-foreground' : 'text-foreground'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
 
 export type ColumnRowProps = {
   column: TableColumnView;
@@ -88,17 +195,10 @@ export function ColumnRow({
         </span>
         <div className="flex shrink-0 items-center gap-1">
           {onEditColumn ? (
-            <select
-              className="nodrag nowheel cursor-pointer rounded border border-input bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground outline-none transition-colors hover:border-accent-foreground hover:text-foreground focus:ring-1 focus:ring-ring"
+            <TypeSelect
               value={column.type}
-              onChange={(e) => onEditColumn(column.id, { colType: e.target.value as SqlType })}
-            >
-              {SQL_TYPES.map((t) => (
-                <option key={t} value={t} className="bg-background text-foreground">
-                  {t}
-                </option>
-              ))}
-            </select>
+              onChange={(newType) => onEditColumn(column.id, { colType: newType })}
+            />
           ) : (
             <span className="text-muted-foreground">{column.type}</span>
           )}

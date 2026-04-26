@@ -8,7 +8,7 @@ import { ConfirmDialog } from './confirm-dialog.js';
 export type TableColumnView = {
   id: string;
   name: string;
-  type: string;
+  type: SqlType;
   isPrimaryKey: boolean;
   isNullable: boolean;
   isUnique: boolean;
