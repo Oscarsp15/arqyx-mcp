@@ -372,3 +372,162 @@ Esto evita que cada agente implemente su propia versión con estilos distintos.
 | Contraste | AA mínimo en ambos temas |
 | Foco | Visible (no remover `outline` sin reemplazo) |
 | Navegación | Todo usable solo con teclado |
+
+---
+
+## 13. Checklist Tema Oscuro (Nivel Senior)
+
+### Antes de Commit que Toca UI
+
+```markdown
+- [ ] ¿Cada color nuevo tiene variante clara Y oscura?
+- [ ] ¿Usé tokens (`bg-background`) en vez de hardcoded (`bg-white`)?
+- [ ] ¿Los iconos usan `currentColor`?
+- [ ] ¿Los bordes son visibles en ambos temas?
+- [ ] ¿Los estados hover/focus funcionan en oscuro?
+- [ ] ¿Las sombras no desaparecen en tema oscuro?
+- [ ] ¿Los overlays tienen opacidad correcta?
+```
+
+### Errores Comunes de Tema Oscuro
+
+| Error | Problema | Solución |
+|-------|----------|----------|
+| `bg-white` hardcoded | Invisible en oscuro | Usar `bg-background` |
+| `text-gray-900` | Invisible en oscuro | Usar `text-foreground` |
+| `border-gray-200` | Invisible en oscuro | Usar `border-border` |
+| `shadow-md` sin ajuste | Desaparece en oscuro | Añadir `dark:shadow-lg` o usar bordes |
+| `bg-black/50` overlay | Muy oscuro en dark | Usar `bg-background/80` |
+| `placeholder-gray-400` | Bajo contraste | Usar `placeholder-muted-foreground` |
+
+### Debugging de Contraste
+
+```tsx
+// Temporal para debug - ELIMINAR antes de commit
+<div className="outline outline-2 outline-red-500">
+  {/* Elemento con problema de contraste */}
+</div>
+
+// Usar DevTools:
+// 1. Inspeccionar elemento
+// 2. Ver "Accessibility" panel
+// 3. Verificar "Contrast ratio"
+```
+
+### Patrones Senior para Temas
+
+```tsx
+// BIEN: Variantes que funcionan en ambos temas
+const buttonVariants = {
+  primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+  secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+  ghost: 'hover:bg-accent hover:text-accent-foreground',
+  destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+};
+
+// BIEN: Bordes adaptativos
+const cardStyles = cn(
+  'rounded-lg border border-border',
+  'bg-card text-card-foreground',
+  'shadow-sm', // Sutil, funciona en ambos
+);
+
+// BIEN: Estados de foco visibles en ambos temas
+const focusStyles = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+```
+
+---
+
+## 14. Testing Visual de Temas
+
+### Proceso Obligatorio
+
+1. **Desarrollar en tema claro** (default)
+2. **Alternar a oscuro** con el toggle
+3. **Verificar cada elemento** nuevo:
+   - ¿Texto legible?
+   - ¿Bordes visibles?
+   - ¿Iconos visibles?
+   - ¿Estados hover/focus funcionan?
+4. **Volver a claro** y verificar que sigue bien
+5. **Capturar screenshots** si es cambio significativo
+
+### Casos Edge que Rompen en Oscuro
+
+```tsx
+// PROBLEMA: SVG con fill hardcoded
+<svg fill="#000000">  // Invisible en oscuro
+
+// SOLUCIÓN: Usar currentColor
+<svg fill="currentColor" className="text-foreground">
+
+// PROBLEMA: Imagen con fondo blanco asumido
+<img src="logo.png" />  // Logo oscuro sobre fondo oscuro
+
+// SOLUCIÓN: Añadir fondo o usar variante
+<img src="logo.png" className="dark:bg-white dark:rounded" />
+// O mejor: usar SVG con currentColor
+
+// PROBLEMA: Input con estilos nativos
+<input type="date" />  // El dropdown nativo no respeta tema
+
+// SOLUCIÓN: Custom date picker o wrapper estilizado
+<DatePicker className="bg-background text-foreground border-border" />
+```
+
+---
+
+## 15. Variables CSS Avanzadas
+
+### Escala Completa Recomendada
+
+```css
+:root {
+  /* Superficies (de más clara a más oscura) */
+  --background: 0 0% 100%;
+  --background-subtle: 210 40% 98%;
+  --card: 0 0% 100%;
+  --muted: 210 40% 96%;
+  --accent: 210 40% 96%;
+
+  /* Texto (de más oscuro a más claro) */
+  --foreground: 222 47% 11%;
+  --foreground-muted: 215 16% 47%;
+
+  /* Bordes */
+  --border: 214 32% 91%;
+  --border-strong: 214 32% 80%;
+
+  /* Estados interactivos */
+  --ring: 222 47% 11%;
+  --ring-offset: 0 0% 100%;
+
+  /* Semánticos */
+  --success: 142 76% 36%;
+  --warning: 38 92% 50%;
+  --error: 0 84% 60%;
+  --info: 199 89% 48%;
+}
+
+[data-theme='dark'] {
+  --background: 222 47% 11%;
+  --background-subtle: 217 33% 14%;
+  --card: 222 47% 13%;
+  --muted: 217 33% 17%;
+  --accent: 217 33% 17%;
+
+  --foreground: 210 40% 98%;
+  --foreground-muted: 215 20% 65%;
+
+  --border: 217 33% 20%;
+  --border-strong: 217 33% 30%;
+
+  --ring: 212 33% 89%;
+  --ring-offset: 222 47% 11%;
+
+  /* Semánticos ajustados para dark */
+  --success: 142 70% 45%;
+  --warning: 38 92% 55%;
+  --error: 0 72% 50%;
+  --info: 199 89% 55%;
+}

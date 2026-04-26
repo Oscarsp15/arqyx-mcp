@@ -308,3 +308,265 @@ type Edge =
                     Contratos en
                   packages/shared
 ```
+
+---
+
+## 12. Patrones de Error Handling (Nivel Senior)
+
+### Fail Fast, Fail Loud
+
+```typescript
+// MAL: silenciar errores
+try {
+  await saveTable(table);
+} catch (e) {
+  console.log(e); // Se pierde el error
+}
+
+// MAL: catch genérico
+try {
+  await saveTable(table);
+} catch (e) {
+  return null; // ¿Qué pasó? Nadie sabe
+}
+
+// BIEN: propagar o manejar explícitamente
+try {
+  await saveTable(table);
+} catch (error) {
+  if (error instanceof ValidationError) {
+    throw new McpError(ErrorCode.InvalidParams, error.message);
+  }
+  throw error; // Re-lanzar lo que no conocemos
+}
+```
+
+### Errores Tipados con Discriminador
+
+```typescript
+// Definir errores de dominio
+type DomainError =
+  | { type: 'NOT_FOUND'; resource: string; id: string }
+  | { type: 'VALIDATION'; field: string; message: string }
+  | { type: 'CONFLICT'; reason: string };
+
+// Result type para operaciones que pueden fallar
+type Result<T, E = DomainError> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+// Uso
+function findTable(id: string): Result<Table> {
+  const table = store.get(id);
+  if (!table) {
+    return { ok: false, error: { type: 'NOT_FOUND', resource: 'Table', id } };
+  }
+  return { ok: true, value: table };
+}
+
+// El caller DEBE manejar ambos casos
+const result = findTable(id);
+if (!result.ok) {
+  // TypeScript sabe que es un error aquí
+  throw new McpError(ErrorCode.InvalidRequest, `${result.error.resource} not found`);
+}
+// TypeScript sabe que result.value es Table aquí
+```
+
+### Never Swallow Async Errors
+
+```typescript
+// MAL: promesa floating
+saveInBackground(data); // Si falla, nadie lo sabe
+
+// BIEN: manejar explícitamente
+saveInBackground(data).catch(error => {
+  logger.error({ error }, 'background save failed');
+  // Decidir: ¿reintentar? ¿notificar? ¿ignorar?
+});
+
+// O usar void para indicar intención
+void saveInBackground(data).catch(handleBackgroundError);
+```
+
+---
+
+## 13. Testing Patterns (Nivel Senior)
+
+### Arrange-Act-Assert
+
+```typescript
+it('añade columna a tabla existente', () => {
+  // Arrange: preparar el estado inicial
+  const table = createTestTable({ name: 'users' });
+  store.addTable(table);
+
+  // Act: ejecutar la acción
+  const result = store.addColumn(table.id, { name: 'email', type: 'varchar' });
+
+  // Assert: verificar el resultado
+  expect(result.columns).toHaveLength(1);
+  expect(result.columns[0].name).toBe('email');
+});
+```
+
+### Test Behavior, Not Implementation
+
+```typescript
+// MAL: testeando implementación
+it('llama a useState', () => {
+  const spy = vi.spyOn(React, 'useState');
+  render(<Component />);
+  expect(spy).toHaveBeenCalled();
+});
+
+// BIEN: testeando comportamiento
+it('muestra el contador incrementado al hacer click', async () => {
+  render(<Counter />);
+  await userEvent.click(screen.getByRole('button', { name: 'Incrementar' }));
+  expect(screen.getByText('1')).toBeInTheDocument();
+});
+```
+
+### Test Edge Cases First
+
+```typescript
+describe('divideNumbers', () => {
+  // Edge cases primero
+  it('lanza error al dividir por cero', () => {
+    expect(() => divideNumbers(10, 0)).toThrow('División por cero');
+  });
+
+  it('retorna 0 cuando el dividendo es 0', () => {
+    expect(divideNumbers(0, 5)).toBe(0);
+  });
+
+  it('maneja números negativos', () => {
+    expect(divideNumbers(-10, 2)).toBe(-5);
+  });
+
+  // Happy path al final
+  it('divide correctamente números positivos', () => {
+    expect(divideNumbers(10, 2)).toBe(5);
+  });
+});
+```
+
+### Factories sobre Fixtures
+
+```typescript
+// MAL: fixtures estáticos
+const testTable = { id: '1', name: 'users', columns: [] };
+
+// BIEN: factory functions
+function createTestTable(overrides: Partial<Table> = {}): Table {
+  return {
+    id: crypto.randomUUID(),
+    name: 'test_table',
+    columns: [],
+    position: { x: 0, y: 0 },
+    ...overrides,
+  };
+}
+
+// Uso flexible
+const simpleTable = createTestTable();
+const tableWithColumns = createTestTable({
+  columns: [createTestColumn({ name: 'id', isPrimaryKey: true })],
+});
+```
+
+---
+
+## 14. Performance Patterns (Nivel Senior)
+
+### Memoización Correcta
+
+```typescript
+// MAL: memoizar todo "por si acaso"
+const value = useMemo(() => simpleCalculation(x), [x]); // Overhead innecesario
+
+// BIEN: memoizar solo cuando hay evidencia
+// 1. Profiling muestra que es lento
+// 2. La operación es O(n²) o peor
+// 3. El resultado se pasa a componentes memo'd
+const expensiveValue = useMemo(() => {
+  // Comentario explicando por qué se memoiza
+  return heavyCalculation(largeArray); // O(n log n)
+}, [largeArray]);
+```
+
+### Evitar Re-renders Innecesarios
+
+```typescript
+// MAL: objeto nuevo en cada render
+<Component config={{ theme: 'dark' }} />
+
+// BIEN: extraer constante
+const CONFIG = { theme: 'dark' } as const;
+<Component config={CONFIG} />
+
+// O memoizar si depende de props
+const config = useMemo(() => ({ theme }), [theme]);
+```
+
+### Lazy Loading
+
+```typescript
+// Componentes pesados: lazy load
+const HeavyChart = lazy(() => import('./heavy-chart'));
+
+// Uso con Suspense
+<Suspense fallback={<ChartSkeleton />}>
+  <HeavyChart data={data} />
+</Suspense>
+```
+
+---
+
+## 15. Decisiones de Diseño Comunes
+
+### Cuándo Crear una Abstracción
+
+| Señal | Acción |
+|-------|--------|
+| Código duplicado 2 veces | Tolerar, observar |
+| Código duplicado 3+ veces | Extraer abstracción |
+| Código similar pero no igual | NO extraer, es peor |
+| Lógica compleja en un lugar | Extraer para testear |
+
+### Cuándo NO Crear una Abstracción
+
+- "Por si después lo necesito" → YAGNI
+- "Para que sea más flexible" → Sin caso de uso concreto, no
+- "Es más elegante" → Elegancia sin utilidad es vanidad
+
+### Trade-offs Conscientes
+
+```typescript
+// Simplicidad vs Flexibilidad
+// SIMPLE: Hardcodear tipos conocidos
+type ColumnType = 'varchar' | 'int' | 'boolean' | 'timestamp';
+
+// FLEXIBLE: Permitir extensión
+type ColumnType = string; // Con validación en runtime
+
+// Decisión: SIMPLE porque el MVP tiene tipos fijos.
+// Si necesitamos más tipos, refactorizamos.
+
+// Rendimiento vs Legibilidad
+// LEGIBLE: Múltiples transformaciones
+const result = data
+  .filter(x => x.active)
+  .map(x => x.name)
+  .sort();
+
+// PERFORMANTE: Un solo loop
+const result = [];
+for (const x of data) {
+  if (x.active) result.push(x.name);
+}
+result.sort();
+
+// Decisión: LEGIBLE a menos que profile demuestre problema.
+```
