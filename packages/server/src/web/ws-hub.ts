@@ -49,11 +49,15 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
 
     socket.on('message', (raw) => {
       const text = typeof raw === 'string' ? raw : raw.toString();
+      logger.debug({ text }, 'incoming client message');
       try {
         const json = JSON.parse(text) as unknown;
         const parsed = ClientToServerMessage.safeParse(json);
         if (!parsed.success) {
-          logger.warn({ issues: parsed.error.issues }, 'rejected malformed client message');
+          logger.warn(
+            { issues: parsed.error.issues, fullMessage: text },
+            'rejected malformed client message',
+          );
           return;
         }
         if (parsed.data.type === 'node:moved') {
@@ -120,6 +124,10 @@ export function attachWsHub(httpServer: HttpServer, store: CanvasStore): WsHub {
             parsed.data.canvasId as CanvasId,
             parsed.data.tableId as TableId,
             parsed.data.columnId as ColumnId,
+          );
+          logger.info(
+            { canvasId: parsed.data.canvasId, columnId: parsed.data.columnId },
+            'column removed',
           );
           return;
         }

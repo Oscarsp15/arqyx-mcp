@@ -147,17 +147,32 @@ export function useCanvasWs(url: string, selectedCanvasId: string | null): Canva
     clientRef.current?.send({ type: 'erd:column:remove', canvasId, tableId, columnId });
   }, []);
 
-  return {
-    canvas,
-    canvases,
-    status,
-    moveNode,
-    addTable,
-    renameTable,
-    removeTable,
-    addColumn,
-    renameColumn,
-    editColumn,
-    removeColumn,
-  };
+  return useMemo(
+    () => ({
+      canvas,
+      canvases,
+      status,
+      moveNode,
+      addTable,
+      renameTable,
+      removeTable,
+      addColumn,
+      renameColumn,
+      editColumn,
+      removeColumn,
+    }),
+    [
+      canvas,
+      canvases,
+      status,
+      moveNode,
+      addTable,
+      renameTable,
+      removeTable,
+      addColumn,
+      renameColumn,
+      editColumn,
+      removeColumn,
+    ],
+  );
 }
