@@ -61,7 +61,7 @@ jobs:
           required_sections=(
             "## Resumen"
             "## Cambios"
-            "## Secciones de AGENTS.md aplicadas"
+            "## Secciones de docs/agents/ aplicadas"
             "## Test plan"
             "## Fuera de alcance"
             "## Riesgos"
