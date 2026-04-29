@@ -1,5 +1,5 @@
 <!--
-Recuerda: este PR debe seguir las reglas de AGENTS.md §21.4.
+Recuerda: este PR debe seguir las reglas de docs/agents/14-pull-requests.md
 Título del PR: <tipo>(<scope>): <mensaje en español>
 -->
 
@@ -14,9 +14,9 @@ Título del PR: <tipo>(<scope>): <mensaje en español>
 -
 -
 
-## Secciones de AGENTS.md aplicadas
+## Secciones de docs/agents/ aplicadas
 
-<!-- Cita los números concretos, por ejemplo: 3, 13.3, 20.1 -->
+<!-- Cita los documentos relevantes, por ejemplo: 03-architecture, 07-mcp-tools, 11-tests -->
 
 ## Test plan
 
@@ -26,7 +26,7 @@ Título del PR: <tipo>(<scope>): <mensaje en español>
 - [ ] Prueba manual realizada (describir qué se probó y qué se vio)
 - [ ] Screenshots incluidos si hay cambios visuales
 
-## Revisión visual (AGENTS.md §20.13 y §22.2)
+## Revisión visual (docs/agents/10-design-system.md)
 
 Si este PR toca UI (componentes, estilos, `globals.css`, nuevos shapes o
 colores), marca una de las dos:
